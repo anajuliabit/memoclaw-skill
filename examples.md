@@ -7,13 +7,14 @@ All examples use x402 for payment. Your wallet address becomes your identity.
 ```javascript
 import { x402Fetch } from '@x402/fetch';
 
-// Store a preference
+// Store a preference (with optional TTL)
 await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
   wallet: process.env.WALLET_KEY,
   body: {
     content: "Ana prefers coffee without sugar, always in the morning",
     metadata: { tags: ["preferences", "food"], context: "morning routine" },
-    importance: 0.8
+    importance: 0.8,
+    expires_at: "2026-12-31T23:59:59Z" // optional: auto-expire
   }
 });
 

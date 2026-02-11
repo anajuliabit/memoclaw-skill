@@ -198,7 +198,8 @@ Request:
   "content": "User prefers dark mode and minimal notifications",
   "metadata": {"tags": ["preferences", "ui"]},
   "importance": 0.8,
-  "namespace": "project-alpha"
+  "namespace": "project-alpha",
+  "expires_at": "2026-06-01T00:00:00Z"
 }
 ```
 
