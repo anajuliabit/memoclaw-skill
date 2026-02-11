@@ -1,25 +1,27 @@
 ---
 name: memoclaw
-version: 1.0.1
+version: 1.1.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
-  vector search. Uses x402 payment protocol — your wallet address is your identity.
-  Pay per request with USDC on Base.
+  vector search. 1000 free calls per wallet, then x402 micropayments.
+  Your wallet address is your identity.
 allowed-tools:
   - exec
 ---
 
 <security>
-This skill requires MEMOCLAW_PRIVATE_KEY environment variable for x402 payments.
-Use a dedicated wallet with small USDC amounts. The skill only makes HTTPS calls
-to api.memoclaw.com for memory storage/retrieval.
+This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
+Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
+Free tier: 1000 calls per wallet. After that, USDC on Base required.
 </security>
 
 # MemoClaw Skill
 
 Memory-as-a-Service for AI agents. Store and recall memories with semantic vector search.
 
-**No API keys. No registration.** Your wallet address is your identity. Pay per request with USDC on Base via [x402](https://x402.org).
+**No API keys. No registration.** Your wallet address is your identity.
+
+**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments ($0.001/call USDC on Base).
 
 ---
 
@@ -103,6 +105,9 @@ Agent response: "Got it — tabs over spaces. I'll remember that."
 The skill includes a CLI for easy shell access:
 
 ```bash
+# Check free tier status
+memoclaw status
+
 # Store a memory
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 
@@ -124,17 +129,28 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 ```
 
 **Environment variables:**
-- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for x402 payments (required)
+- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required)
+
+**Free tier:** First 1000 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
 ---
 
 ## How It Works
 
-MemoClaw uses the x402 payment protocol. Every request includes a payment header signed by your wallet. The payment amount depends on the operation, and your wallet address automatically becomes your user identity.
+MemoClaw uses wallet-based identity. Your wallet address is your user ID.
 
-Think of it like a vending machine: insert payment, get memory services.
+**Two auth methods:**
 
-## Pricing (USDC on Base)
+1. **Free Tier (default)** — Sign a message with your wallet, get 1000 free calls
+2. **x402 Payment** — Pay per call with USDC on Base (kicks in after free tier)
+
+The CLI handles both automatically. Just set your private key and go.
+
+## Pricing
+
+**Free Tier:** 1000 calls per wallet (no payment required)
+
+**After Free Tier (USDC on Base):**
 
 | Operation | Price |
 |-----------|-------|
@@ -146,13 +162,13 @@ Think of it like a vending machine: insert payment, get memory services.
 
 ## Setup
 
-You need an x402-compatible client to sign payment headers. Options:
+```bash
+npm install -g memoclaw
+export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
+memoclaw status  # Check your free tier remaining
+```
 
-1. **x402 CLI**: `npx @x402/cli pay POST https://api.memoclaw.com/v1/store --data '...'`
-2. **x402 SDK**: Use `@x402/fetch` for programmatic access
-3. **Direct signing**: Construct payment headers manually (see x402.org/docs)
-
-Required: A wallet with USDC on Base network.
+That's it. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
 
 ## API Reference
 
