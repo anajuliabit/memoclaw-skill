@@ -1,27 +1,25 @@
 ---
 name: memoclaw
-version: 1.2.0
+version: 1.0.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
-  vector search. 1000 free calls per wallet, then x402 micropayments.
-  Your wallet address is your identity.
+  vector search. Uses x402 payment protocol — your wallet address is your identity.
+  Pay per request with USDC on Base.
 allowed-tools:
   - exec
 ---
 
 <security>
-This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
-Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
-Free tier: 1000 calls per wallet. After that, USDC on Base required.
+This skill requires MEMOCLAW_PRIVATE_KEY environment variable for x402 payments.
+Use a dedicated wallet with small USDC amounts. The skill only makes HTTPS calls
+to api.memoclaw.com for memory storage/retrieval.
 </security>
 
 # MemoClaw Skill
 
 Memory-as-a-Service for AI agents. Store and recall memories with semantic vector search.
 
-**No API keys. No registration.** Your wallet address is your identity.
-
-**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments ($0.001/call USDC on Base).
+**No API keys. No registration.** Your wallet address is your identity. Pay per request with USDC on Base via [x402](https://x402.org).
 
 ---
 
@@ -105,9 +103,6 @@ Agent response: "Got it — tabs over spaces. I'll remember that."
 The skill includes a CLI for easy shell access:
 
 ```bash
-# Check free tier status
-memoclaw status
-
 # Store a memory
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 
@@ -120,12 +115,6 @@ memoclaw list --namespace default --limit 20
 
 # Delete a memory
 memoclaw delete <uuid>
-
-# Ingest raw text (extract + dedup + relate)
-memoclaw ingest "raw text to extract facts from"
-
-# Extract facts from text
-memoclaw extract "User prefers dark mode. Timezone is PST."
 ```
 
 **Setup:**
@@ -135,28 +124,17 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 ```
 
 **Environment variables:**
-- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required)
-
-**Free tier:** First 1000 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
+- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for x402 payments (required)
 
 ---
 
 ## How It Works
 
-MemoClaw uses wallet-based identity. Your wallet address is your user ID.
+MemoClaw uses the x402 payment protocol. Every request includes a payment header signed by your wallet. The payment amount depends on the operation, and your wallet address automatically becomes your user identity.
 
-**Two auth methods:**
+Think of it like a vending machine: insert payment, get memory services.
 
-1. **Free Tier (default)** — Sign a message with your wallet, get 1000 free calls
-2. **x402 Payment** — Pay per call with USDC on Base (kicks in after free tier)
-
-The CLI handles both automatically. Just set your private key and go.
-
-## Pricing
-
-**Free Tier:** 1000 calls per wallet (no payment required)
-
-**After Free Tier (USDC on Base):**
+## Pricing (USDC on Base)
 
 | Operation | Price |
 |-----------|-------|
@@ -168,13 +146,13 @@ The CLI handles both automatically. Just set your private key and go.
 
 ## Setup
 
-```bash
-npm install -g memoclaw
-export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
-memoclaw status  # Check your free tier remaining
-```
+You need an x402-compatible client to sign payment headers. Options:
 
-That's it. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+1. **x402 CLI**: `npx @x402/cli pay POST https://api.memoclaw.com/v1/store --data '...'`
+2. **x402 SDK**: Use `@x402/fetch` for programmatic access
+3. **Direct signing**: Construct payment headers manually (see x402.org/docs)
+
+Required: A wallet with USDC on Base network.
 
 ## API Reference
 
@@ -208,9 +186,6 @@ Fields:
 - `metadata.tags`: Array of strings for filtering, max 10 tags
 - `importance`: Float 0-1, affects ranking in recall (default: 0.5)
 - `namespace`: Isolate memories per project/context (default: "default")
-- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"` — each type has different decay half-lives (correction: 180d, preference: 180d, decision: 90d, project: 30d, observation: 14d, general: 60d)
-- `session_id`: Session identifier for multi-agent scoping
-- `agent_id`: Agent identifier for multi-agent scoping
 
 ### Store Batch
 
@@ -286,7 +261,6 @@ Fields:
 - `namespace`: Filter by namespace
 - `filters.tags`: Match any of these tags
 - `filters.after`: Only memories after this date
-- `include_relations`: Boolean — include related memories in results
 
 ### List Memories
 
@@ -316,166 +290,6 @@ Response:
   "deleted": true,
   "id": "550e8400-e29b-41d4-a716-446655440000"
 }
-```
-
-### Ingest (Zero-Effort Ingestion)
-
-```
-POST /v1/ingest
-```
-
-Dump a conversation or raw text, get extracted facts, dedup, and auto-relations.
-
-Request:
-```json
-{
-  "messages": [{"role": "user", "content": "I prefer dark mode"}],
-  "text": "or raw text instead of messages",
-  "namespace": "default",
-  "session_id": "session-123",
-  "agent_id": "agent-1",
-  "auto_relate": true
-}
-```
-
-Response:
-```json
-{
-  "memory_ids": ["uuid1", "uuid2"],
-  "facts_extracted": 3,
-  "facts_stored": 2,
-  "facts_deduplicated": 1,
-  "relations_created": 1,
-  "tokens_used": 150
-}
-```
-
-Fields:
-- `messages`: Array of `{role, content}` conversation messages (optional if `text` provided)
-- `text`: Raw text to extract facts from (optional if `messages` provided)
-- `namespace`: Namespace for stored memories (default: "default")
-- `session_id`: Session identifier for multi-agent scoping
-- `agent_id`: Agent identifier for multi-agent scoping
-- `auto_relate`: Automatically create relations between extracted facts (default: false)
-
-### Extract Facts
-
-```
-POST /v1/memories/extract
-```
-
-Extract facts from conversation messages via LLM.
-
-Request:
-```json
-{
-  "messages": [
-    {"role": "user", "content": "My timezone is PST and I use vim"},
-    {"role": "assistant", "content": "Got it!"}
-  ],
-  "namespace": "default",
-  "session_id": "session-123",
-  "agent_id": "agent-1"
-}
-```
-
-Response:
-```json
-{
-  "memory_ids": ["uuid1", "uuid2"],
-  "facts_extracted": 2,
-  "facts_stored": 2,
-  "facts_deduplicated": 0,
-  "tokens_used": 120
-}
-```
-
-### Consolidate (Merge Similar Memories)
-
-```
-POST /v1/memories/consolidate
-```
-
-Find and merge duplicate/similar memories.
-
-Request:
-```json
-{
-  "namespace": "default",
-  "min_similarity": 0.85,
-  "mode": "rule",
-  "dry_run": false
-}
-```
-
-Response:
-```json
-{
-  "clusters_found": 3,
-  "memories_merged": 5,
-  "memories_created": 3,
-  "clusters": [
-    {"memory_ids": ["uuid1", "uuid2"], "similarity": 0.92, "merged_into": "uuid3"}
-  ]
-}
-```
-
-Fields:
-- `namespace`: Limit consolidation to a namespace
-- `min_similarity`: Minimum similarity threshold to consider merging (default: 0.85)
-- `mode`: `"rule"` (fast, pattern-based) or `"llm"` (smarter, uses LLM to merge)
-- `dry_run`: Preview clusters without merging (default: false)
-
-### Suggested (Proactive Suggestions)
-
-```
-GET /v1/suggested?limit=5&namespace=default&category=stale
-```
-
-Get memories you should review: stale important, fresh unreviewed, hot, decaying.
-
-Query params:
-- `limit`: Max results (default: 10)
-- `namespace`: Filter by namespace
-- `session_id`: Filter by session
-- `agent_id`: Filter by agent
-- `category`: `"stale"|"fresh"|"hot"|"decaying"`
-
-Response:
-```json
-{
-  "suggested": [...],
-  "categories": {"stale": 3, "fresh": 2, "hot": 5, "decaying": 1},
-  "total": 11
-}
-```
-
-### Memory Relations (CRUD)
-
-Create, list, and delete relationships between memories.
-
-**Create relationship:**
-```
-POST /v1/memories/:id/relations
-```
-```json
-{
-  "target_id": "uuid-of-related-memory",
-  "relation_type": "related_to",
-  "metadata": {}
-}
-```
-
-Relation types: `"related_to"|"derived_from"|"contradicts"|"supersedes"|"supports"`
-
-**List relationships:**
-```
-GET /v1/memories/:id/relations
-```
-
-**Delete relationship:**
-```
-DELETE /v1/memories/:id/relations/:relationId
 ```
 
 ## When to Store
