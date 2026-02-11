@@ -122,6 +122,9 @@ memoclaw recall "project decisions" --namespace myproject --limit 5
 # List all memories
 memoclaw list --namespace default --limit 20
 
+# Update a memory in-place
+memoclaw update <uuid> --content "Updated text" --importance 0.9
+
 # Delete a memory
 memoclaw delete <uuid>
 
@@ -166,6 +169,7 @@ The CLI handles both automatically. Just set your private key and go.
 |-----------|-------|
 | Store memory | $0.001 |
 | Store batch (up to 100) | $0.01 |
+| Update memory | $0.001 |
 | Recall (semantic search) | $0.001 |
 | List memories | $0.0005 |
 | Delete memory | $0.0001 |
@@ -215,6 +219,7 @@ Fields:
 - `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"` — each type has different decay half-lives (correction: 180d, preference: 180d, decision: 90d, project: 30d, observation: 14d, general: 60d)
 - `session_id`: Session identifier for multi-agent scoping
 - `agent_id`: Agent identifier for multi-agent scoping
+- `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
 
 ### Store Batch
 
@@ -321,6 +326,42 @@ Response:
   "id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
+
+### Update Memory
+
+```
+PATCH /v1/memories/{id}
+```
+
+Update one or more fields on an existing memory. If `content` changes, embedding and full-text search vector are regenerated.
+
+Request:
+```json
+{
+  "content": "User prefers 2-space indentation (not tabs)",
+  "importance": 0.95,
+  "expires_at": "2026-06-01T00:00:00Z"
+}
+```
+
+Response:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "content": "User prefers 2-space indentation (not tabs)",
+  "importance": 0.95,
+  "expires_at": "2026-06-01T00:00:00Z",
+  "updated_at": "2026-02-11T15:30:00Z"
+}
+```
+
+Fields (all optional, at least one required):
+- `content`: New memory text, max 8192 characters (triggers re-embedding)
+- `metadata`: Replace metadata entirely (same validation as store)
+- `importance`: Float 0-1
+- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"`
+- `namespace`: Move to a different namespace
+- `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
 
 ### Ingest (Zero-Effort Ingestion)
 

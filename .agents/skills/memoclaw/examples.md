@@ -111,8 +111,29 @@ const list = await x402Fetch('GET',
 
 console.log(`Found ${list.total} memories`);
 
+// Update a memory (only provided fields change)
+await x402Fetch('PATCH',
+  `https://api.memoclaw.dev/v1/memories/${memoryId}`,
+  {
+    wallet: process.env.WALLET_KEY,
+    body: {
+      content: "Updated: Team chose PostgreSQL 16 (upgraded from 15)",
+      importance: 0.95
+    }
+  }
+);
+
+// Set a TTL on a memory
+await x402Fetch('PATCH',
+  `https://api.memoclaw.dev/v1/memories/${memoryId}`,
+  {
+    wallet: process.env.WALLET_KEY,
+    body: { expires_at: "2026-06-01T00:00:00Z" }
+  }
+);
+
 // Delete a specific memory
-await x402Fetch('DELETE', 
+await x402Fetch('DELETE',
   `https://api.memoclaw.dev/v1/memories/${memoryId}`,
   { wallet: process.env.WALLET_KEY }
 );
