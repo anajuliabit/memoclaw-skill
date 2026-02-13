@@ -130,6 +130,20 @@ memoclaw ingest "raw text to extract facts from"
 
 # Extract facts from text
 memoclaw extract "User prefers dark mode. Timezone is PST."
+
+# Update a memory
+memoclaw update <uuid> --content "new content" --importance 0.9 --pinned true
+
+# Consolidate similar memories
+memoclaw consolidate --namespace default --dry-run
+
+# Get proactive suggestions
+memoclaw suggested --category stale --limit 10
+
+# Manage relations
+memoclaw relations list <memory-id>
+memoclaw relations create <memory-id> <target-id> related_to
+memoclaw relations delete <memory-id> <relation-id>
 ```
 
 **Setup:**
@@ -305,6 +319,33 @@ Response:
   "total": 45,
   "limit": 20,
   "offset": 0
+}
+```
+
+### Update Memory
+
+```
+PATCH /v1/memories/{id}
+```
+
+Body (all fields optional):
+```json
+{
+  "content": "Updated content text",
+  "importance": 0.9,
+  "memory_type": "core",
+  "namespace": "new-namespace",
+  "metadata": {"tags": ["updated"]},
+  "expires_at": "2025-12-31T00:00:00Z",
+  "pinned": true
+}
+```
+
+Response:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "updated": true
 }
 ```
 
