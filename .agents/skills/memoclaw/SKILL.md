@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.3.0
+version: 1.5.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -11,7 +11,7 @@ allowed-tools:
 
 <security>
 This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
-Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
+Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.dev.
 Free tier: 1000 calls per wallet. After that, USDC on Base required.
 </security>
 
@@ -39,11 +39,13 @@ Is the information worth remembering across sessions?
       ├─ YES → Is the existing memory outdated?
       │  ├─ YES → Update the existing memory (PATCH).
       │  └─ NO → Skip. Don't duplicate.
-      └─ NO → Store it.
-         ├─ User preference/correction → importance 0.8-0.95
-         ├─ Decision or architecture → importance 0.85-0.95
-         ├─ Factual context → importance 0.5-0.8
-         └─ Ephemeral observation → importance 0.3-0.5 (or skip)
+      └─ NO → How much information?
+         ├─ Single fact → Store it.
+         │  ├─ User preference/correction → importance 0.8-0.95
+         │  ├─ Decision or architecture → importance 0.85-0.95
+         │  ├─ Factual context → importance 0.5-0.8
+         │  └─ Ephemeral observation → importance 0.3-0.5 (or skip)
+         └─ Multiple facts / raw conversation → Use `ingest` (auto-extract + dedup)
 ```
 
 ### When MemoClaw Beats Local Files
@@ -693,14 +695,14 @@ import { x402Fetch } from '@x402/fetch';
 
 const memoclaw = {
   async store(content, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
+    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { content, ...options }
     });
   },
   
   async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
+    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { query, ...options }
     });
@@ -717,3 +719,103 @@ await memoclaw.store("User's timezone is America/Sao_Paulo", {
 // Recall later
 const results = await memoclaw.recall("what timezone is the user in?");
 ```
+
+---
+
+## Status Check
+
+```
+GET /v1/status
+```
+
+Returns wallet info and free tier usage. No payment required.
+
+Response:
+```json
+{
+  "wallet": "0xYourAddress",
+  "free_calls_remaining": 847,
+  "free_calls_total": 1000,
+  "plan": "free"
+}
+```
+
+CLI: `memoclaw status`
+
+---
+
+## Error Recovery & Retry
+
+When MemoClaw API calls fail, follow this strategy:
+
+```
+API call failed?
+├─ 402 PAYMENT_REQUIRED
+│  ├─ Free tier? → Check MEMOCLAW_PRIVATE_KEY, run `memoclaw status`
+│  └─ Paid tier? → Check USDC balance on Base
+├─ 422 VALIDATION_ERROR → Fix request body (check field constraints above)
+├─ 404 NOT_FOUND → Memory was deleted or never existed
+├─ 429 RATE_LIMITED → Back off 2-5 seconds, retry once
+├─ 500/502/503 → Retry with exponential backoff (1s, 2s, 4s), max 3 retries
+└─ Network error → Fall back to local files temporarily, retry next session
+```
+
+**Graceful degradation:** If MemoClaw is unreachable, don't block the user. Use local scratch files as temporary storage and sync back when the API is available. Never let a memory service outage prevent you from helping.
+
+---
+
+## Migration Guide: Local Files → MemoClaw
+
+If you've been using local markdown files (e.g., `MEMORY.md`, `memory/*.md`) for persistence, here's how to migrate:
+
+### Step 1: Extract facts from existing files
+
+```bash
+# Feed your existing memory file to ingest
+memoclaw ingest "$(cat MEMORY.md)" --namespace default
+
+# Or for multiple files
+for f in memory/*.md; do
+  memoclaw ingest "$(cat "$f")" --namespace default
+done
+```
+
+### Step 2: Verify migration
+
+```bash
+# Check what was stored
+memoclaw list --limit 50
+
+# Test recall
+memoclaw recall "user preferences"
+```
+
+### Step 3: Pin critical memories
+
+```bash
+# Find your most important memories and pin them
+memoclaw suggested --category hot --limit 20
+# Then pin the essentials:
+memoclaw update <id> --pinned true
+```
+
+### Step 4: Keep local files as backup
+
+Don't delete local files immediately. Run both systems in parallel for a week, then phase out local files once you trust the recall quality.
+
+---
+
+## Multi-Agent Patterns
+
+When multiple agents share the same wallet but need isolation:
+
+```bash
+# Agent 1 stores in its own scope
+memoclaw store "User prefers concise answers" \
+  --agent-id agent-main --session-id session-abc
+
+# Agent 2 can query across all agents or filter
+memoclaw recall "user communication style" --agent-id agent-main
+```
+
+Use `agent_id` for per-agent isolation and `session_id` for per-conversation scoping. Namespaces are for logical domains (projects), not agents.
