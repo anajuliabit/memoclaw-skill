@@ -332,36 +332,6 @@ Response:
 }
 ```
 
-### Update Memory
-
-```
-PATCH /v1/memories/{id}
-```
-
-Body (all fields optional):
-```json
-{
-  "content": "Updated content text",
-  "importance": 0.9,
-  "memory_type": "core",
-  "namespace": "new-namespace",
-  "metadata": {"tags": ["updated"]},
-  "expires_at": "2025-12-31T00:00:00Z",
-  "pinned": true
-}
-```
-
-Fields (all optional, at least one required):
-- `content`: New memory text, max 8192 characters (triggers re-embedding)
-- `metadata`: Replace metadata entirely
-- `importance`: Float 0-1
-- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"`
-- `namespace`: Move to a different namespace
-- `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
-- `pinned`: Boolean — pin/unpin memory (pinned memories are exempt from decay)
-
-Response: Returns the updated memory object.
-
 ### Delete Memory
 
 ```
