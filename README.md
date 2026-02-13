@@ -31,7 +31,11 @@ After free tier (USDC on Base):
 - Store: $0.001
 - Recall: $0.001
 - List: $0.0005
+- Update: $0.001
 - Delete: $0.0001
+- Ingest/Extract/Consolidate: $0.005
+- Suggested: $0.001
+- Relations: $0.0005
 
 Your wallet address is your identity — no signup needed.
 
