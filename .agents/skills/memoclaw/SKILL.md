@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.5.0
+version: 1.7.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -11,7 +11,7 @@ allowed-tools:
 
 <security>
 This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
-Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.dev.
+Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
 Free tier: 1000 calls per wallet. After that, USDC on Base required.
 </security>
 
@@ -129,8 +129,9 @@ Use these guidelines to assign importance consistently:
 - Use `memoclaw ingest` for bulk conversation processing
 - Update existing memories when facts change (don't create duplicates)
 
-#### Session End
+#### Session End (Auto-Store Hook)
 When a session is ending or a significant conversation concludes:
+
 1. **Summarize key takeaways** and store as a session summary:
    ```bash
    memoclaw store "Session 2026-02-13: Discussed migration to PostgreSQL 16, decided to use pgvector for embeddings, user wants completion by March" \
@@ -145,7 +146,40 @@ When a session is ending or a significant conversation concludes:
    memoclaw suggested --category stale --limit 5
    ```
 
-### Conflict Resolution
+**Session Summary Template:**
+```
+Session {date}: {brief description}
+- Key decisions: {list}
+- User preferences learned: {list}
+- Next steps: {list}
+- Questions to follow up: {list}
+```
+
+### Auto-Summarization Helpers
+
+For efficient memory management, use these patterns:
+
+#### Quick Session Snapshot
+```bash
+# Single command to store a quick session summary
+memoclaw store "Session $(date +%Y-%m-%d): {1-sentence summary}" \
+  --importance 0.6 --tags session-summary
+```
+
+#### Conversation Digest (via ingest)
+```bash
+# Extract facts from a transcript
+memoclaw ingest "$(cat conversation.txt)" --namespace default --auto-relate
+```
+
+#### Key Points Extraction
+```bash
+# After important discussion, extract and store
+memoclaw extract "User mentioned: prefers TypeScript, timezone PST, allergic to shellfish"
+# Results in separate memories for each fact
+```
+
+### Conflict Resolution Strategies
 
 When a new fact contradicts an existing memory:
 
@@ -179,6 +213,23 @@ Use namespaces to organize memories:
 ❌ **Namespace sprawl** — Don't create a new namespace for every conversation. Use `default` + project namespaces.
 ❌ **Skipping importance** — Leaving importance at default 0.5 for everything defeats ranking.
 ❌ **Forgetting memory_type** — Always set it. Decay half-lives depend on it.
+
+### Competitor Skills & Alternative Approaches
+
+Other agent memory skills and patterns to be aware of:
+
+| Approach | Description | Pros | Cons |
+|----------|-------------|------|------|
+| **Local Markdown Files** | MEMORY.md, memory/*.md | No API needed, full control | No semantic search, lost on context reset |
+| **OpenClaw memory_search** | Built-in semantic search over local files | Integrated, no setup | Limited to local files, no cross-session |
+| **Mem0** | mem0.ai - hierarchical memory for AI | Multi-level (user/org/agent) | Requires API key, paid after free tier |
+| **Letta** | letta.com - persistent memory for AI | Agent state management | More complex setup |
+| **Neon Memory** | Context7's agent memory | Built into context7 | Platform-specific |
+
+**When to use MemoClaw vs alternatives:**
+- Use MemoClaw for: Cross-session persistence, semantic search, wallet-based auth (no API keys)
+- Use local files for: Secrets, temporary notes, large structured data
+- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta)
 
 ### Example Flow
 
@@ -695,14 +746,14 @@ import { x402Fetch } from '@x402/fetch';
 
 const memoclaw = {
   async store(content, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { content, ...options }
     });
   },
   
   async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { query, ...options }
     });
