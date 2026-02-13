@@ -118,6 +118,7 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 # Recall memories
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
+memoclaw recall "user settings" --memory-type preference
 
 # List all memories
 memoclaw list --namespace default --limit 20
@@ -281,7 +282,8 @@ Request:
   "namespace": "project-alpha",
   "filters": {
     "tags": ["preferences"],
-    "after": "2025-01-01"
+    "after": "2025-01-01",
+    "memory_type": "preference"
   }
 }
 ```
@@ -310,6 +312,7 @@ Fields:
 - `namespace`: Filter by namespace
 - `filters.tags`: Match any of these tags
 - `filters.after`: Only memories after this date
+- `filters.memory_type`: Filter by type (`correction`, `preference`, `decision`, `project`, `observation`, `general`)
 - `include_relations`: Boolean — include related memories in results
 
 ### List Memories
