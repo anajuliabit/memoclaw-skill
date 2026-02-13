@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.3.0
+version: 1.4.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -11,7 +11,7 @@ allowed-tools:
 
 <security>
 This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
-Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
+Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.dev.
 Free tier: 1000 calls per wallet. After that, USDC on Base required.
 </security>
 
@@ -666,6 +666,95 @@ DELETE /v1/memories/:id/relations/:relationId
 9. **Pin critical memories** — Use `pinned: true` for facts that should never decay (e.g. user's name)
 10. **Use relations** — Link related memories with `supersedes`, `contradicts`, `supports` for richer recall
 
+## Auto-Summarization Helpers
+
+Use these patterns to automatically summarize and store conversation context.
+
+### End-of-Session Summary
+
+After a meaningful conversation, generate a summary and store it:
+
+```bash
+# Ingest the full conversation — MemoClaw extracts, deduplicates, and relates facts
+memoclaw ingest "$(cat conversation.txt)" --namespace project-alpha
+
+# Or store a hand-crafted summary
+memoclaw store "Session 2026-02-13: Migrated auth to JWT, chose RS256, user wants refresh tokens by Friday" \
+  --importance 0.7 --tags session-summary --memory-type project --namespace project-alpha
+```
+
+### Periodic Consolidation (Recommended Weekly)
+
+```bash
+# Preview what would merge
+memoclaw consolidate --namespace default --dry-run
+
+# Merge duplicates (rule-based, fast)
+memoclaw consolidate --namespace default --mode rule
+
+# Merge duplicates (LLM-powered, smarter for nuanced overlaps)
+memoclaw consolidate --namespace default --mode llm
+```
+
+### Stale Memory Review
+
+```bash
+# Find high-importance memories that haven't been accessed recently
+memoclaw suggested --category stale --limit 10
+
+# Find memories that are decaying and may need pinning or refreshing
+memoclaw suggested --category decaying --limit 10
+```
+
+### Quick-Reference: Memory Type → Decay Half-Life
+
+| Type | Half-life | Pin if… |
+|------|-----------|---------|
+| `correction` | 180 days | It's a permanent constraint |
+| `preference` | 180 days | Core identity preference |
+| `decision` | 90 days | Architecture/design choice still active |
+| `project` | 30 days | Project is ongoing |
+| `observation` | 14 days | Rarely — observations are ephemeral |
+| `general` | 60 days | It's evergreen reference info |
+
+---
+
+## Troubleshooting
+
+### Common Issues
+
+**"PAYMENT_REQUIRED" on first call"**
+- Check `MEMOCLAW_PRIVATE_KEY` is set and starts with `0x`
+- Run `memoclaw status` to verify free tier remaining
+- Ensure the key is a valid Ethereum private key (64 hex chars after `0x`)
+
+**"Recall returns no results"**
+- Lower `min_similarity` (try 0.3-0.5 for broad matches)
+- Check you're querying the right `namespace`
+- Verify memories were stored (use `memoclaw list`)
+- Try rephrasing — semantic search matches meaning, not keywords
+
+**"Duplicate memories keep appearing"**
+- Always recall before storing (check the decision tree above)
+- Run `memoclaw consolidate --dry-run` to find clusters
+- Use higher `min_similarity` (0.85+) in consolidation
+
+**"Memories disappearing"**
+- Check `memory_type` — observations decay in 14 days
+- Pin important memories: `memoclaw update <id> --pinned true`
+- Check `expires_at` — expired memories are auto-removed
+
+**"CLI not found"**
+- Install: `npm install -g memoclaw`
+- Or use npx: `npx memoclaw status`
+
+### Getting Help
+
+- API docs: https://memoclaw.dev/docs
+- GitHub issues: https://github.com/anajuliabit/memoclaw-skill/issues
+
+---
+
 ## Error Handling
 
 All errors follow this format:
@@ -693,14 +782,14 @@ import { x402Fetch } from '@x402/fetch';
 
 const memoclaw = {
   async store(content, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
+    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { content, ...options }
     });
   },
   
   async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
+    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { query, ...options }
     });

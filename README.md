@@ -41,9 +41,13 @@ Your wallet address is your identity — no signup needed.
 
 ## Links
 
-- **API**: https://api.memoclaw.com
-- **Docs**: https://memoclaw.com/docs
-- **Website**: https://memoclaw.com
+- **API**: https://api.memoclaw.dev
+- **Docs**: https://memoclaw.dev/docs
+- **Website**: https://memoclaw.dev
+
+## Comparison with Alternatives
+
+See [COMPETITORS.md](COMPETITORS.md) for a detailed comparison with Mem0, Zep, and others.
 
 ## License
 
