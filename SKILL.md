@@ -328,33 +328,6 @@ Response:
 }
 ```
 
-### Update Memory
-
-```
-PATCH /v1/memories/{id}
-```
-
-Body (all fields optional):
-```json
-{
-  "content": "Updated content text",
-  "importance": 0.9,
-  "memory_type": "core",
-  "namespace": "new-namespace",
-  "metadata": {"tags": ["updated"]},
-  "expires_at": "2025-12-31T00:00:00Z",
-  "pinned": true
-}
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "updated": true
-}
-```
-
 ### Delete Memory
 
 ```
