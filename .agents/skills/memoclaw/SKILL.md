@@ -133,6 +133,20 @@ memoclaw ingest "raw text to extract facts from"
 
 # Extract facts from text
 memoclaw extract "User prefers dark mode. Timezone is PST."
+
+# Update a memory
+memoclaw update <uuid> --content "new content" --importance 0.9 --pinned true
+
+# Consolidate similar memories
+memoclaw consolidate --namespace default --dry-run
+
+# Get proactive suggestions
+memoclaw suggested --category stale --limit 10
+
+# Manage relations
+memoclaw relations list <memory-id>
+memoclaw relations create <memory-id> <target-id> related_to
+memoclaw relations delete <memory-id> <relation-id>
 ```
 
 **Setup:**

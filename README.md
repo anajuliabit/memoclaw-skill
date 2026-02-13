@@ -25,12 +25,15 @@ memoclaw recall "what did we discuss about roadmap"
 
 ## Pricing
 
+**Free Tier:** 1000 calls per wallet — no payment required.
+
+After free tier (USDC on Base):
 - Store: $0.001
 - Recall: $0.001
 - List: $0.0005
 - Delete: $0.0001
 
-Pay with USDC on Base. Your wallet address is your identity — no signup needed.
+Your wallet address is your identity — no signup needed.
 
 ## Links
 
