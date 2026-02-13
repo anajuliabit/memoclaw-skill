@@ -65,9 +65,9 @@ Your wallet address is your identity — no signup needed.
 
 ## Links
 
-- **API**: https://api.memoclaw.dev
-- **Docs**: https://memoclaw.dev/docs
-- **Website**: https://memoclaw.dev
+- **API**: https://api.memoclaw.com
+- **Docs**: https://memoclaw.com/docs
+- **Website**: https://memoclaw.com
 
 ## License
 

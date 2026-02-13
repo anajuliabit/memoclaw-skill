@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.6.0
+version: 1.7.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -11,7 +11,7 @@ allowed-tools:
 
 <security>
 This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
-Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.dev.
+Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
 Free tier: 1000 calls per wallet. After that, USDC on Base required.
 </security>
 
@@ -760,14 +760,14 @@ import { x402Fetch } from '@x402/fetch';
 
 const memoclaw = {
   async store(content, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { content, ...options }
     });
   },
   
   async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
       wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { query, ...options }
     });
