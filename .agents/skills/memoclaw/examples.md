@@ -8,8 +8,8 @@ All examples use x402 for payment. Your wallet address becomes your identity.
 import { x402Fetch } from '@x402/fetch';
 
 // Store a preference (with optional TTL)
-await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
-  wallet: process.env.WALLET_KEY,
+await x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     content: "Ana prefers coffee without sugar, always in the morning",
     metadata: { tags: ["preferences", "food"], context: "morning routine" },
@@ -19,8 +19,8 @@ await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
 });
 
 // Recall it later
-const result = await x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
-  wallet: process.env.WALLET_KEY,
+const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     query: "how does Ana like her coffee?",
     limit: 3
@@ -35,8 +35,8 @@ console.log(result.memories[0].content);
 
 ```javascript
 // Store architecture decisions in a namespace
-await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
-  wallet: process.env.WALLET_KEY,
+await x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     content: "Team decided PostgreSQL over MongoDB for ACID requirements",
     metadata: { tags: ["architecture", "database"] },
@@ -46,8 +46,8 @@ await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
 });
 
 // Recall only from that project
-const result = await x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
-  wallet: process.env.WALLET_KEY,
+const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     query: "what database did we choose and why?",
     namespace: "project-alpha"
@@ -59,8 +59,8 @@ const result = await x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
 
 ```javascript
 // Import multiple memories at once ($0.01 for up to 100)
-await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store/batch', {
-  wallet: process.env.WALLET_KEY,
+await x402Fetch('POST', 'https://api.memoclaw.com/v1/store/batch', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     memories: [
       {
@@ -87,8 +87,8 @@ await x402Fetch('POST', 'https://api.memoclaw.dev/v1/store/batch', {
 
 ```javascript
 // Recall only recent food preferences
-const result = await x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
-  wallet: process.env.WALLET_KEY,
+const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
+  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     query: "food and drink preferences",
     limit: 10,
@@ -106,17 +106,17 @@ const result = await x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
 ```javascript
 // List all memories in a namespace
 const list = await x402Fetch('GET', 
-  'https://api.memoclaw.dev/v1/memories?namespace=project-alpha&limit=50',
-  { wallet: process.env.WALLET_KEY }
+  'https://api.memoclaw.com/v1/memories?namespace=project-alpha&limit=50',
+  { wallet: process.env.MEMOCLAW_PRIVATE_KEY }
 );
 
 console.log(`Found ${list.total} memories`);
 
 // Update a memory (only provided fields change)
 await x402Fetch('PATCH',
-  `https://api.memoclaw.dev/v1/memories/${memoryId}`,
+  `https://api.memoclaw.com/v1/memories/${memoryId}`,
   {
-    wallet: process.env.WALLET_KEY,
+    wallet: process.env.MEMOCLAW_PRIVATE_KEY,
     body: {
       content: "Updated: Team chose PostgreSQL 16 (upgraded from 15)",
       importance: 0.95
@@ -126,17 +126,17 @@ await x402Fetch('PATCH',
 
 // Set a TTL on a memory
 await x402Fetch('PATCH',
-  `https://api.memoclaw.dev/v1/memories/${memoryId}`,
+  `https://api.memoclaw.com/v1/memories/${memoryId}`,
   {
-    wallet: process.env.WALLET_KEY,
+    wallet: process.env.MEMOCLAW_PRIVATE_KEY,
     body: { expires_at: "2026-06-01T00:00:00Z" }
   }
 );
 
 // Delete a specific memory
 await x402Fetch('DELETE',
-  `https://api.memoclaw.dev/v1/memories/${memoryId}`,
-  { wallet: process.env.WALLET_KEY }
+  `https://api.memoclaw.com/v1/memories/${memoryId}`,
+  { wallet: process.env.MEMOCLAW_PRIVATE_KEY }
 );
 ```
 
@@ -146,12 +146,12 @@ Using the x402 CLI directly:
 
 ```bash
 # Store a memory
-npx @x402/cli pay POST https://api.memoclaw.dev/v1/store \
+npx @x402/cli pay POST https://api.memoclaw.com/v1/store \
   --wallet ~/.wallet/key \
   --data '{"content": "User prefers vim keybindings", "importance": 0.8}'
 
 # Recall memories
-npx @x402/cli pay POST https://api.memoclaw.dev/v1/recall \
+npx @x402/cli pay POST https://api.memoclaw.com/v1/recall \
   --wallet ~/.wallet/key \
   --data '{"query": "editor preferences"}'
 ```
@@ -175,14 +175,14 @@ class AgentMemory {
       return existing.memories[0];
     }
     
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/store', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
       wallet: this.wallet,
       body: { content, importance, metadata: { tags }, namespace: this.namespace }
     });
   }
 
   async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.dev/v1/recall', {
+    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
       wallet: this.wallet,
       body: { query, namespace: this.namespace, ...options }
     });
