@@ -118,6 +118,7 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 # Recall memories
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
+memoclaw recall "user settings" --memory-type preference
 
 # List all memories
 memoclaw list --namespace default --limit 20
@@ -235,6 +236,7 @@ Fields:
 - `session_id`: Session identifier for multi-agent scoping
 - `agent_id`: Agent identifier for multi-agent scoping
 - `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
+- `pinned`: Boolean — pinned memories are exempt from decay (default: false)
 
 ### Store Batch
 
@@ -281,7 +283,8 @@ Request:
   "namespace": "project-alpha",
   "filters": {
     "tags": ["preferences"],
-    "after": "2025-01-01"
+    "after": "2025-01-01",
+    "memory_type": "preference"
   }
 }
 ```
@@ -310,6 +313,7 @@ Fields:
 - `namespace`: Filter by namespace
 - `filters.tags`: Match any of these tags
 - `filters.after`: Only memories after this date
+- `filters.memory_type`: Filter by type (`correction`, `preference`, `decision`, `project`, `observation`, `general`)
 - `include_relations`: Boolean — include related memories in results
 
 ### List Memories
@@ -341,42 +345,6 @@ Response:
   "id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
-
-### Update Memory
-
-```
-PATCH /v1/memories/{id}
-```
-
-Update one or more fields on an existing memory. If `content` changes, embedding and full-text search vector are regenerated.
-
-Request:
-```json
-{
-  "content": "User prefers 2-space indentation (not tabs)",
-  "importance": 0.95,
-  "expires_at": "2026-06-01T00:00:00Z"
-}
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "content": "User prefers 2-space indentation (not tabs)",
-  "importance": 0.95,
-  "expires_at": "2026-06-01T00:00:00Z",
-  "updated_at": "2026-02-11T15:30:00Z"
-}
-```
-
-Fields (all optional, at least one required):
-- `content`: New memory text, max 8192 characters (triggers re-embedding)
-- `metadata`: Replace metadata entirely (same validation as store)
-- `importance`: Float 0-1
-- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"`
-- `namespace`: Move to a different namespace
-- `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
 
 ### Ingest (Zero-Effort Ingestion)
 
