@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.2.0
+version: 1.3.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -22,6 +22,46 @@ Memory-as-a-Service for AI agents. Store and recall memories with semantic vecto
 **No API keys. No registration.** Your wallet address is your identity.
 
 **Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments ($0.001/call USDC on Base).
+
+---
+
+## Decision Tree: Should You Use MemoClaw?
+
+Use this to decide whether MemoClaw is the right tool for a given situation:
+
+```
+Is the information worth remembering across sessions?
+├─ NO → Don't store. Use context window or local scratch files.
+└─ YES → Is it a secret (password, API key, token)?
+   ├─ YES → NEVER store in MemoClaw. Use a secrets manager.
+   └─ NO → Is it already stored?
+      ├─ UNKNOWN → Recall first, then decide.
+      ├─ YES → Is the existing memory outdated?
+      │  ├─ YES → Update the existing memory (PATCH).
+      │  └─ NO → Skip. Don't duplicate.
+      └─ NO → Store it.
+         ├─ User preference/correction → importance 0.8-0.95
+         ├─ Decision or architecture → importance 0.85-0.95
+         ├─ Factual context → importance 0.5-0.8
+         └─ Ephemeral observation → importance 0.3-0.5 (or skip)
+```
+
+### When MemoClaw Beats Local Files
+
+| Scenario | MemoClaw | Local markdown |
+|----------|----------|----------------|
+| Cross-session recall | ✅ Persistent | ❌ Lost on context reset |
+| Semantic search ("what did user say about X?") | ✅ Vector search | ❌ Keyword only |
+| Multi-agent sharing | ✅ Namespace isolation | ❌ File conflicts |
+| Deduplication | ✅ Built-in consolidate | ❌ Manual |
+| Structured decay | ✅ Type-based half-lives | ❌ Manual cleanup |
+
+### When Local Files Are Fine
+
+- Temporary scratch notes within a single session
+- Large structured data (configs, code files)
+- Information that changes every few minutes
+- Data that must never leave the local machine
 
 ---
 
@@ -61,13 +101,63 @@ After learning something important, store it immediately:
 | Project context learned | Store with namespace = project name |
 | User shares personal info | Store with importance 0.8, tag "user-info" |
 
-### Session Start Routine
+### Importance Scoring Heuristics
 
-When starting a new session or conversation:
+Use these guidelines to assign importance consistently:
 
-1. **Recall recent context**: `{"query": "recent important context", "limit": 5}`
-2. **Recall user basics**: `{"query": "user preferences and info", "limit": 5}`
+| Importance | When to use | Examples |
+|------------|------------|---------|
+| **0.95** | Corrections, critical constraints | "Never deploy on Fridays", "I'm allergic to shellfish" |
+| **0.85-0.9** | Decisions, strong preferences | "We chose PostgreSQL", "Always use TypeScript" |
+| **0.7-0.8** | General preferences, user info | "Prefers dark mode", "Timezone is PST" |
+| **0.5-0.6** | Useful context, soft preferences | "Likes morning standups", "Mentioned trying Rust" |
+| **0.3-0.4** | Low-value observations | "Had a meeting with Bob today" |
+
+**Rule of thumb:** If you'd be upset forgetting it, importance ≥ 0.8. If it's nice to know, 0.5-0.7. If it's trivia, ≤ 0.4 or don't store.
+
+### Session Lifecycle
+
+#### Session Start
+1. **Recall recent context**: `memoclaw recall "recent important context" --limit 5`
+2. **Recall user basics**: `memoclaw recall "user preferences and info" --limit 5`
 3. Use this context to personalize your responses
+
+#### During Session
+- Store new facts as they emerge (recall first to avoid duplicates)
+- Use `memoclaw ingest` for bulk conversation processing
+- Update existing memories when facts change (don't create duplicates)
+
+#### Session End
+When a session is ending or a significant conversation concludes:
+1. **Summarize key takeaways** and store as a session summary:
+   ```bash
+   memoclaw store "Session 2026-02-13: Discussed migration to PostgreSQL 16, decided to use pgvector for embeddings, user wants completion by March" \
+     --importance 0.7 --tags session-summary,project-alpha --namespace project-alpha
+   ```
+2. **Run consolidation** if many memories were created:
+   ```bash
+   memoclaw consolidate --namespace default --dry-run
+   ```
+3. **Check for stale memories** that should be updated:
+   ```bash
+   memoclaw suggested --category stale --limit 5
+   ```
+
+### Conflict Resolution
+
+When a new fact contradicts an existing memory:
+
+1. **Recall the existing memory** to confirm the conflict
+2. **Store the new fact** with a `supersedes` relation:
+   ```bash
+   memoclaw store "User now prefers spaces over tabs (changed 2026-02)" \
+     --importance 0.85 --tags preferences,code-style
+   memoclaw relations create <new-id> <old-id> supersedes
+   ```
+3. **Optionally update** the old memory's importance downward or add an expiration
+4. **Never silently overwrite** — the history of changes has value
+
+For contradictions you're unsure about, ask the user before storing.
 
 ### Namespace Strategy
 
@@ -77,12 +167,16 @@ Use namespaces to organize memories:
 - `project-{name}` — Project-specific knowledge
 - `session-{date}` — Session summaries (optional)
 
-### Don't Store
+### Anti-Patterns (Don't Do These)
 
-- Passwords, API keys, tokens, or secrets
-- Ephemeral conversation (routine back-and-forth)
-- Information already stored (recall first to check)
-- Raw data dumps (summarize first)
+❌ **Store-everything syndrome** — Don't store every sentence. Be selective.
+❌ **Recall-on-every-turn** — Don't recall before every response. Only when relevant.
+❌ **Ignoring duplicates** — Always recall before storing to check for existing memories.
+❌ **Vague content** — "User likes editors" is useless. Be specific: "User prefers VSCode with vim bindings."
+❌ **Storing secrets** — Never store passwords, API keys, or tokens. No exceptions.
+❌ **Namespace sprawl** — Don't create a new namespace for every conversation. Use `default` + project namespaces.
+❌ **Skipping importance** — Leaving importance at default 0.5 for everything defeats ranking.
+❌ **Forgetting memory_type** — Always set it. Decay half-lives depend on it.
 
 ### Example Flow
 
@@ -95,9 +189,10 @@ Agent thinking:
 3. If not stored → store with importance 0.8, tags ["preferences", "code-style"]
 
 Agent action:
-→ POST /v1/recall {"query": "tabs spaces indentation preference"}
+→ memoclaw recall "tabs spaces indentation preference"
 → No matches found
-→ POST /v1/store {"content": "User prefers tabs over spaces for indentation", "importance": 0.8, "metadata": {"tags": ["preferences", "code-style"]}}
+→ memoclaw store "User prefers tabs over spaces for indentation" \
+    --importance 0.8 --tags preferences,code-style
 
 Agent response: "Got it — tabs over spaces. I'll remember that."
 ```
@@ -118,12 +213,13 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 # Recall memories
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
+memoclaw recall "user settings" --memory-type preference
 
 # List all memories
 memoclaw list --namespace default --limit 20
 
 # Update a memory in-place
-memoclaw update <uuid> --content "Updated text" --importance 0.9
+memoclaw update <uuid> --content "Updated text" --importance 0.9 --pinned true
 
 # Delete a memory
 memoclaw delete <uuid>
@@ -133,9 +229,6 @@ memoclaw ingest "raw text to extract facts from"
 
 # Extract facts from text
 memoclaw extract "User prefers dark mode. Timezone is PST."
-
-# Update a memory
-memoclaw update <uuid> --content "new content" --importance 0.9 --pinned true
 
 # Consolidate similar memories
 memoclaw consolidate --namespace default --dry-run
@@ -213,6 +306,7 @@ Request:
   "metadata": {"tags": ["preferences", "ui"]},
   "importance": 0.8,
   "namespace": "project-alpha",
+  "memory_type": "preference",
   "expires_at": "2026-06-01T00:00:00Z"
 }
 ```
@@ -235,6 +329,7 @@ Fields:
 - `session_id`: Session identifier for multi-agent scoping
 - `agent_id`: Agent identifier for multi-agent scoping
 - `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
+- `pinned`: Boolean — pinned memories are exempt from decay (default: false)
 
 ### Store Batch
 
@@ -281,7 +376,8 @@ Request:
   "namespace": "project-alpha",
   "filters": {
     "tags": ["preferences"],
-    "after": "2025-01-01"
+    "after": "2025-01-01",
+    "memory_type": "preference"
   }
 }
 ```
@@ -310,6 +406,7 @@ Fields:
 - `namespace`: Filter by namespace
 - `filters.tags`: Match any of these tags
 - `filters.after`: Only memories after this date
+- `filters.memory_type`: Filter by type (`correction`, `preference`, `decision`, `project`, `observation`, `general`)
 - `include_relations`: Boolean — include related memories in results
 
 ### List Memories
@@ -325,20 +422,6 @@ Response:
   "total": 45,
   "limit": 20,
   "offset": 0
-}
-```
-
-### Delete Memory
-
-```
-DELETE /v1/memories/{id}
-```
-
-Response:
-```json
-{
-  "deleted": true,
-  "id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
 
@@ -377,6 +460,21 @@ Fields (all optional, at least one required):
 - `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"`
 - `namespace`: Move to a different namespace
 - `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
+- `pinned`: Boolean — pinned memories are exempt from decay
+
+### Delete Memory
+
+```
+DELETE /v1/memories/{id}
+```
+
+Response:
+```json
+{
+  "deleted": true,
+  "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
 
 ### Ingest (Zero-Effort Ingestion)
 
@@ -560,10 +658,13 @@ DELETE /v1/memories/:id/relations/:relationId
 1. **Be specific** — "Ana prefers VSCode with vim bindings" beats "user likes editors"
 2. **Add metadata** — Tags enable filtered recall later
 3. **Set importance** — 0.9+ for critical info, 0.5 for nice-to-have
-4. **Use namespaces** — Isolate memories per project or context
-5. **Don't duplicate** — Recall before storing similar content
-6. **Respect privacy** — Never store passwords, API keys, or tokens
-7. **Decay naturally** — High importance + recency = higher ranking
+4. **Set memory_type** — Decay half-lives depend on it (correction: 180d, preference: 180d, decision: 90d, project: 30d, observation: 14d, general: 60d)
+5. **Use namespaces** — Isolate memories per project or context
+6. **Don't duplicate** — Recall before storing similar content
+7. **Respect privacy** — Never store passwords, API keys, or tokens
+8. **Decay naturally** — High importance + recency = higher ranking
+9. **Pin critical memories** — Use `pinned: true` for facts that should never decay (e.g. user's name)
+10. **Use relations** — Link related memories with `supersedes`, `contradicts`, `supports` for richer recall
 
 ## Error Handling
 
@@ -593,14 +694,14 @@ import { x402Fetch } from '@x402/fetch';
 const memoclaw = {
   async store(content, options = {}) {
     return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
-      wallet: process.env.WALLET_PRIVATE_KEY,
+      wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { content, ...options }
     });
   },
   
   async recall(query, options = {}) {
     return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-      wallet: process.env.WALLET_PRIVATE_KEY,
+      wallet: process.env.MEMOCLAW_PRIVATE_KEY,
       body: { query, ...options }
     });
   }
@@ -609,7 +710,8 @@ const memoclaw = {
 // Store a memory
 await memoclaw.store("User's timezone is America/Sao_Paulo", {
   metadata: { tags: ["user-info"] },
-  importance: 0.7
+  importance: 0.7,
+  memory_type: "preference"
 });
 
 // Recall later
