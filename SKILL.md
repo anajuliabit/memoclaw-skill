@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.7.0
+version: 1.8.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -227,28 +227,6 @@ Use namespaces to organize memories:
 ❌ **Never consolidating** — Over time, memories become fragmented. Run consolidate periodically.
 ❌ **Ignoring decay** — Memories naturally decay. Review stale memories regularly.
 ❌ **Single namespace for everything** — Use namespaces to isolate different contexts.
-
-### Competitor Skills & Alternative Approaches
-
-Other agent memory skills and patterns to be aware of:
-
-| Approach | Description | Pros | Cons |
-|----------|-------------|------|------|
-| **Local Markdown Files** | MEMORY.md, memory/*.md | No API needed, full control | No semantic search, lost on context reset |
-| **OpenClaw memory_search** | Built-in semantic search over local files | Integrated, no setup | Limited to local files, no cross-session |
-| **Mem0** | mem0.ai - hierarchical memory for AI | Multi-level (user/org/agent) | Requires API key, paid after free tier |
-| **Letta** | letta.com - persistent memory for AI | Agent state management | More complex setup |
-| **Neon Memory** | Context7's agent memory | Built into context7 | Platform-specific |
-| **memU** | github.com/NevaMind-AI/memU | Memory for 24/7 proactive agents | Newer, less battle-tested |
-| **MemOS** | github.com/MemTensor/MemOS | Cross-platform agent memory OS | Requires setup |
-| **honcho** | github.com/plastic-labs/honcho | Python memory library for stateful agents | Python-only |
-| **memsearch** | github.com/zilliztech/memsearch | Markdown-first memory system | Less feature-rich |
-| **Squirrel** | github.com/hakoniwaa/Squirrel | Rust-based AI memory for coding | Language-specific (Rust) |
-
-**When to use MemoClaw vs alternatives:**
-- Use MemoClaw for: Cross-session persistence, semantic search, wallet-based auth (no API keys)
-- Use local files for: Secrets, temporary notes, large structured data
-- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta), Python-based agents (honcho), Markdown-preferred workflows (memsearch)
 
 ### Example Flow
 
