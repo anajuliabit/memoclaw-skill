@@ -10,7 +10,7 @@ npx skills add anajuliabit/memoclaw-skill
 
 Or manually copy `SKILL.md` to your agent's skills directory.
 
-## Usage
+## Quick Start
 
 ```bash
 # Set your private key
@@ -21,7 +21,31 @@ memoclaw store "Meeting notes: discussed Q1 roadmap" --importance 0.8 --tags wor
 
 # Recall memories
 memoclaw recall "what did we discuss about roadmap"
+
+# Session start - load context
+memoclaw recall "user preferences" --limit 5
+
+# Session end - store summary
+memoclaw store "Session 2026-02-13: Discussed project priorities" --importance 0.6 --tags session-summary
 ```
+
+## Key Features
+
+- **Semantic Search** - Natural language recall across all memories
+- **Auto-Deduplication** - Built-in consolidate to merge similar memories  
+- **Importance Scoring** - Rank memories by significance (0-1)
+- **Memory Types** - Automatic decay based on type (correction: 180d, preference: 180d, decision: 90d)
+- **Namespaces** - Organize memories per project or context
+- **Relations** - Link related memories (supersedes, contradicts, supports)
+
+## When to Use MemoClaw
+
+| Use MemoClaw | Use Local Files |
+|--------------|-----------------|
+| Cross-session recall | Secrets, API keys |
+| Semantic search | Temporary scratch notes |
+| User preferences | Large configs/code |
+| Project context | Data that must stay local |
 
 ## Pricing
 

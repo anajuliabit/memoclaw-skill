@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.3.0
+version: 1.7.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -39,11 +39,13 @@ Is the information worth remembering across sessions?
       ├─ YES → Is the existing memory outdated?
       │  ├─ YES → Update the existing memory (PATCH).
       │  └─ NO → Skip. Don't duplicate.
-      └─ NO → Store it.
-         ├─ User preference/correction → importance 0.8-0.95
-         ├─ Decision or architecture → importance 0.85-0.95
-         ├─ Factual context → importance 0.5-0.8
-         └─ Ephemeral observation → importance 0.3-0.5 (or skip)
+      └─ NO → How much information?
+         ├─ Single fact → Store it.
+         │  ├─ User preference/correction → importance 0.8-0.95
+         │  ├─ Decision or architecture → importance 0.85-0.95
+         │  ├─ Factual context → importance 0.5-0.8
+         │  └─ Ephemeral observation → importance 0.3-0.5 (or skip)
+         └─ Multiple facts / raw conversation → Use `ingest` (auto-extract + dedup)
 ```
 
 ### When MemoClaw Beats Local Files
@@ -107,13 +109,24 @@ Use these guidelines to assign importance consistently:
 
 | Importance | When to use | Examples |
 |------------|------------|---------|
-| **0.95** | Corrections, critical constraints | "Never deploy on Fridays", "I'm allergic to shellfish" |
-| **0.85-0.9** | Decisions, strong preferences | "We chose PostgreSQL", "Always use TypeScript" |
-| **0.7-0.8** | General preferences, user info | "Prefers dark mode", "Timezone is PST" |
-| **0.5-0.6** | Useful context, soft preferences | "Likes morning standups", "Mentioned trying Rust" |
-| **0.3-0.4** | Low-value observations | "Had a meeting with Bob today" |
+| **0.95** | Corrections, critical constraints, safety-related | "Never deploy on Fridays", "I'm allergic to shellfish", "User is a minor" |
+| **0.85-0.9** | Decisions, strong preferences, architecture choices | "We chose PostgreSQL", "Always use TypeScript", "Budget is $5k" |
+| **0.7-0.8** | General preferences, user info, project context | "Prefers dark mode", "Timezone is PST", "Working on API v2" |
+| **0.5-0.6** | Useful context, soft preferences, observations | "Likes morning standups", "Mentioned trying Rust", "Had a call with Bob" |
+| **0.3-0.4** | Low-value observations, ephemeral data | "Meeting at 3pm", "Weather was sunny" |
 
 **Rule of thumb:** If you'd be upset forgetting it, importance ≥ 0.8. If it's nice to know, 0.5-0.7. If it's trivia, ≤ 0.4 or don't store.
+
+**Quick reference - Memory Type vs Importance:**
+
+| memory_type | Recommended Importance | Decay Half-Life |
+|-------------|----------------------|-----------------|
+| correction | 0.9-0.95 | 180 days |
+| preference | 0.7-0.9 | 180 days |
+| decision | 0.85-0.95 | 90 days |
+| project | 0.6-0.8 | 30 days |
+| observation | 0.3-0.5 | 14 days |
+| general | 0.4-0.6 | 60 days |
 
 ### Session Lifecycle
 
@@ -127,8 +140,9 @@ Use these guidelines to assign importance consistently:
 - Use `memoclaw ingest` for bulk conversation processing
 - Update existing memories when facts change (don't create duplicates)
 
-#### Session End
+#### Session End (Auto-Store Hook)
 When a session is ending or a significant conversation concludes:
+
 1. **Summarize key takeaways** and store as a session summary:
    ```bash
    memoclaw store "Session 2026-02-13: Discussed migration to PostgreSQL 16, decided to use pgvector for embeddings, user wants completion by March" \
@@ -143,7 +157,40 @@ When a session is ending or a significant conversation concludes:
    memoclaw suggested --category stale --limit 5
    ```
 
-### Conflict Resolution
+**Session Summary Template:**
+```
+Session {date}: {brief description}
+- Key decisions: {list}
+- User preferences learned: {list}
+- Next steps: {list}
+- Questions to follow up: {list}
+```
+
+### Auto-Summarization Helpers
+
+For efficient memory management, use these patterns:
+
+#### Quick Session Snapshot
+```bash
+# Single command to store a quick session summary
+memoclaw store "Session $(date +%Y-%m-%d): {1-sentence summary}" \
+  --importance 0.6 --tags session-summary
+```
+
+#### Conversation Digest (via ingest)
+```bash
+# Extract facts from a transcript
+memoclaw ingest "$(cat conversation.txt)" --namespace default --auto-relate
+```
+
+#### Key Points Extraction
+```bash
+# After important discussion, extract and store
+memoclaw extract "User mentioned: prefers TypeScript, timezone PST, allergic to shellfish"
+# Results in separate memories for each fact
+```
+
+### Conflict Resolution Strategies
 
 When a new fact contradicts an existing memory:
 
@@ -177,6 +224,31 @@ Use namespaces to organize memories:
 ❌ **Namespace sprawl** — Don't create a new namespace for every conversation. Use `default` + project namespaces.
 ❌ **Skipping importance** — Leaving importance at default 0.5 for everything defeats ranking.
 ❌ **Forgetting memory_type** — Always set it. Decay half-lives depend on it.
+❌ **Never consolidating** — Over time, memories become fragmented. Run consolidate periodically.
+❌ **Ignoring decay** — Memories naturally decay. Review stale memories regularly.
+❌ **Single namespace for everything** — Use namespaces to isolate different contexts.
+
+### Competitor Skills & Alternative Approaches
+
+Other agent memory skills and patterns to be aware of:
+
+| Approach | Description | Pros | Cons |
+|----------|-------------|------|------|
+| **Local Markdown Files** | MEMORY.md, memory/*.md | No API needed, full control | No semantic search, lost on context reset |
+| **OpenClaw memory_search** | Built-in semantic search over local files | Integrated, no setup | Limited to local files, no cross-session |
+| **Mem0** | mem0.ai - hierarchical memory for AI | Multi-level (user/org/agent) | Requires API key, paid after free tier |
+| **Letta** | letta.com - persistent memory for AI | Agent state management | More complex setup |
+| **Neon Memory** | Context7's agent memory | Built into context7 | Platform-specific |
+| **memU** | github.com/NevaMind-AI/memU | Memory for 24/7 proactive agents | Newer, less battle-tested |
+| **MemOS** | github.com/MemTensor/MemOS | Cross-platform agent memory OS | Requires setup |
+| **honcho** | github.com/plastic-labs/honcho | Python memory library for stateful agents | Python-only |
+| **memsearch** | github.com/zilliztech/memsearch | Markdown-first memory system | Less feature-rich |
+| **Squirrel** | github.com/hakoniwaa/Squirrel | Rust-based AI memory for coding | Language-specific (Rust) |
+
+**When to use MemoClaw vs alternatives:**
+- Use MemoClaw for: Cross-session persistence, semantic search, wallet-based auth (no API keys)
+- Use local files for: Secrets, temporary notes, large structured data
+- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta), Python-based agents (honcho), Markdown-preferred workflows (memsearch)
 
 ### Example Flow
 
@@ -717,3 +789,103 @@ await memoclaw.store("User's timezone is America/Sao_Paulo", {
 // Recall later
 const results = await memoclaw.recall("what timezone is the user in?");
 ```
+
+---
+
+## Status Check
+
+```
+GET /v1/status
+```
+
+Returns wallet info and free tier usage. No payment required.
+
+Response:
+```json
+{
+  "wallet": "0xYourAddress",
+  "free_calls_remaining": 847,
+  "free_calls_total": 1000,
+  "plan": "free"
+}
+```
+
+CLI: `memoclaw status`
+
+---
+
+## Error Recovery & Retry
+
+When MemoClaw API calls fail, follow this strategy:
+
+```
+API call failed?
+├─ 402 PAYMENT_REQUIRED
+│  ├─ Free tier? → Check MEMOCLAW_PRIVATE_KEY, run `memoclaw status`
+│  └─ Paid tier? → Check USDC balance on Base
+├─ 422 VALIDATION_ERROR → Fix request body (check field constraints above)
+├─ 404 NOT_FOUND → Memory was deleted or never existed
+├─ 429 RATE_LIMITED → Back off 2-5 seconds, retry once
+├─ 500/502/503 → Retry with exponential backoff (1s, 2s, 4s), max 3 retries
+└─ Network error → Fall back to local files temporarily, retry next session
+```
+
+**Graceful degradation:** If MemoClaw is unreachable, don't block the user. Use local scratch files as temporary storage and sync back when the API is available. Never let a memory service outage prevent you from helping.
+
+---
+
+## Migration Guide: Local Files → MemoClaw
+
+If you've been using local markdown files (e.g., `MEMORY.md`, `memory/*.md`) for persistence, here's how to migrate:
+
+### Step 1: Extract facts from existing files
+
+```bash
+# Feed your existing memory file to ingest
+memoclaw ingest "$(cat MEMORY.md)" --namespace default
+
+# Or for multiple files
+for f in memory/*.md; do
+  memoclaw ingest "$(cat "$f")" --namespace default
+done
+```
+
+### Step 2: Verify migration
+
+```bash
+# Check what was stored
+memoclaw list --limit 50
+
+# Test recall
+memoclaw recall "user preferences"
+```
+
+### Step 3: Pin critical memories
+
+```bash
+# Find your most important memories and pin them
+memoclaw suggested --category hot --limit 20
+# Then pin the essentials:
+memoclaw update <id> --pinned true
+```
+
+### Step 4: Keep local files as backup
+
+Don't delete local files immediately. Run both systems in parallel for a week, then phase out local files once you trust the recall quality.
+
+---
+
+## Multi-Agent Patterns
+
+When multiple agents share the same wallet but need isolation:
+
+```bash
+# Agent 1 stores in its own scope
+memoclaw store "User prefers concise answers" \
+  --agent-id agent-main --session-id session-abc
+
+# Agent 2 can query across all agents or filter
+memoclaw recall "user communication style" --agent-id agent-main
+```
+
+Use `agent_id` for per-agent isolation and `session_id` for per-conversation scoping. Namespaces are for logical domains (projects), not agents.
