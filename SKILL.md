@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.8.0
+version: 1.8.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -286,6 +286,9 @@ memoclaw consolidate --namespace default --dry-run
 # Get proactive suggestions
 memoclaw suggested --category stale --limit 10
 
+# Migrate .md files to MemoClaw
+memoclaw migrate ./memory/
+
 # Manage relations
 memoclaw relations list <memory-id>
 memoclaw relations create <memory-id> <target-id> related_to
@@ -330,6 +333,7 @@ The CLI handles both automatically. Just set your private key and go.
 | Recall (semantic search) | $0.001 |
 | List memories | $0.0005 |
 | Delete memory | $0.0001 |
+| Migrate (per request) | $0.005 |
 
 ## Setup
 
@@ -340,6 +344,9 @@ memoclaw status  # Check your free tier remaining
 ```
 
 That's it. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+
+**Docs:** https://docs.memoclaw.com
+**MCP Server:** `npm install -g memoclaw-mcp` (for tool-based access from MCP-compatible clients)
 
 ## API Reference
 
