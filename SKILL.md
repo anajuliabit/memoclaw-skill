@@ -239,11 +239,16 @@ Other agent memory skills and patterns to be aware of:
 | **Mem0** | mem0.ai - hierarchical memory for AI | Multi-level (user/org/agent) | Requires API key, paid after free tier |
 | **Letta** | letta.com - persistent memory for AI | Agent state management | More complex setup |
 | **Neon Memory** | Context7's agent memory | Built into context7 | Platform-specific |
+| **memU** | github.com/NevaMind-AI/memU | Memory for 24/7 proactive agents | Newer, less battle-tested |
+| **MemOS** | github.com/MemTensor/MemOS | Cross-platform agent memory OS | Requires setup |
+| **honcho** | github.com/plastic-labs/honcho | Python memory library for stateful agents | Python-only |
+| **memsearch** | github.com/zilliztech/memsearch | Markdown-first memory system | Less feature-rich |
+| **Squirrel** | github.com/hakoniwaa/Squirrel | Rust-based AI memory for coding | Language-specific (Rust) |
 
 **When to use MemoClaw vs alternatives:**
 - Use MemoClaw for: Cross-session persistence, semantic search, wallet-based auth (no API keys)
 - Use local files for: Secrets, temporary notes, large structured data
-- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta)
+- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta), Python-based agents (honcho), Markdown-preferred workflows (memsearch)
 
 ### Example Flow
 
