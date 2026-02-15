@@ -142,18 +142,39 @@ await x402Fetch('DELETE',
 
 ## Example 6: CLI Usage
 
-Using the x402 CLI directly:
-
 ```bash
+# Setup (one-time)
+npm install -g memoclaw
+memoclaw init    # Interactive wallet setup
+
 # Store a memory
-npx @x402/cli pay POST https://api.memoclaw.com/v1/store \
-  --wallet ~/.wallet/key \
-  --data '{"content": "User prefers vim keybindings", "importance": 0.8}'
+memoclaw store "User prefers vim keybindings" --importance 0.8 --tags tools,preferences
 
 # Recall memories
-npx @x402/cli pay POST https://api.memoclaw.com/v1/recall \
-  --wallet ~/.wallet/key \
-  --data '{"query": "editor preferences"}'
+memoclaw recall "editor preferences" --limit 5
+
+# Ingest raw text (auto-extract facts, dedup, and relate)
+memoclaw ingest "User's name is Ana. She lives in São Paulo. She works with TypeScript."
+
+# Extract facts from conversation
+memoclaw extract "I prefer dark mode and use 2-space indentation"
+
+# Consolidate duplicates (preview first)
+memoclaw consolidate --namespace default --dry-run
+memoclaw consolidate --namespace default
+
+# Review stale memories
+memoclaw suggested --category stale --limit 10
+
+# Manage relations between memories
+memoclaw relations list <memory-id>
+memoclaw relations create <memory-id> <target-id> supersedes
+
+# Migrate local markdown files
+memoclaw migrate ./memory/
+
+# Check free tier status
+memoclaw status
 ```
 
 ## Example 7: Agent Memory Layer
@@ -206,6 +227,39 @@ class AgentMemory {
   }
 }
 ```
+
+## Example 8: Python SDK
+
+```python
+from memoclaw import MemoClawClient
+
+async with MemoClawClient(private_key="0xYourKey") as client:
+    # Store a memory
+    result = await client.store(
+        content="User prefers async/await over callbacks",
+        importance=0.8,
+        tags=["preferences", "code-style"],
+        memory_type="preference",
+    )
+
+    # Recall memories
+    memories = await client.recall(
+        query="coding style preferences",
+        limit=5,
+        min_similarity=0.6,
+    )
+    for m in memories:
+        print(f"[{m.similarity:.2f}] {m.content}")
+
+    # Ingest raw text
+    ingest_result = await client.ingest(
+        text="User uses Neovim on macOS. Timezone is PST.",
+        auto_relate=True,
+    )
+    print(f"Extracted {ingest_result.facts_extracted} facts")
+```
+
+Install: `pip install memoclaw`
 
 ## Cost Breakdown
 
