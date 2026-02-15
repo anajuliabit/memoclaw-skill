@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.7.0
+version: 1.8.4
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 1000 free calls per wallet, then x402 micropayments.
@@ -109,13 +109,24 @@ Use these guidelines to assign importance consistently:
 
 | Importance | When to use | Examples |
 |------------|------------|---------|
-| **0.95** | Corrections, critical constraints | "Never deploy on Fridays", "I'm allergic to shellfish" |
-| **0.85-0.9** | Decisions, strong preferences | "We chose PostgreSQL", "Always use TypeScript" |
-| **0.7-0.8** | General preferences, user info | "Prefers dark mode", "Timezone is PST" |
-| **0.5-0.6** | Useful context, soft preferences | "Likes morning standups", "Mentioned trying Rust" |
-| **0.3-0.4** | Low-value observations | "Had a meeting with Bob today" |
+| **0.95** | Corrections, critical constraints, safety-related | "Never deploy on Fridays", "I'm allergic to shellfish", "User is a minor" |
+| **0.85-0.9** | Decisions, strong preferences, architecture choices | "We chose PostgreSQL", "Always use TypeScript", "Budget is $5k" |
+| **0.7-0.8** | General preferences, user info, project context | "Prefers dark mode", "Timezone is PST", "Working on API v2" |
+| **0.5-0.6** | Useful context, soft preferences, observations | "Likes morning standups", "Mentioned trying Rust", "Had a call with Bob" |
+| **0.3-0.4** | Low-value observations, ephemeral data | "Meeting at 3pm", "Weather was sunny" |
 
 **Rule of thumb:** If you'd be upset forgetting it, importance ≥ 0.8. If it's nice to know, 0.5-0.7. If it's trivia, ≤ 0.4 or don't store.
+
+**Quick reference - Memory Type vs Importance:**
+
+| memory_type | Recommended Importance | Decay Half-Life |
+|-------------|----------------------|-----------------|
+| correction | 0.9-0.95 | 180 days |
+| preference | 0.7-0.9 | 180 days |
+| decision | 0.85-0.95 | 90 days |
+| project | 0.6-0.8 | 30 days |
+| observation | 0.3-0.5 | 14 days |
+| general | 0.4-0.6 | 60 days |
 
 ### Session Lifecycle
 
@@ -213,28 +224,9 @@ Use namespaces to organize memories:
 ❌ **Namespace sprawl** — Don't create a new namespace for every conversation. Use `default` + project namespaces.
 ❌ **Skipping importance** — Leaving importance at default 0.5 for everything defeats ranking.
 ❌ **Forgetting memory_type** — Always set it. Decay half-lives depend on it.
-
-### Competitor Skills & Alternative Approaches
-
-Other agent memory skills and patterns to be aware of:
-
-| Approach | Description | Pros | Cons |
-|----------|-------------|------|------|
-| **Local Markdown Files** | MEMORY.md, memory/*.md | No API needed, full control | No semantic search, lost on context reset |
-| **OpenClaw memory_search** | Built-in semantic search over local files | Integrated, no setup | Limited to local files, no cross-session |
-| **Mem0** | mem0.ai - hierarchical memory for AI | Multi-level (user/org/agent) | Requires API key, paid after free tier |
-| **Letta** | letta.com - persistent memory for AI | Agent state management | More complex setup |
-| **Neon Memory** | Context7's agent memory | Built into context7 | Platform-specific |
-| **memU** | github.com/NevaMind-AI/memU | Memory for 24/7 proactive agents | Newer, less battle-tested |
-| **MemOS** | github.com/MemTensor/MemOS | Cross-platform agent memory OS | Requires setup |
-| **honcho** | github.com/plastic-labs/honcho | Python memory library for stateful agents | Python-only |
-| **memsearch** | github.com/zilliztech/memsearch | Markdown-first memory system | Less feature-rich |
-| **Squirrel** | github.com/hakoniwaa/Squirrel | Rust-based AI memory for coding | Language-specific (Rust) |
-
-**When to use MemoClaw vs alternatives:**
-- Use MemoClaw for: Cross-session persistence, semantic search, wallet-based auth (no API keys)
-- Use local files for: Secrets, temporary notes, large structured data
-- Use alternatives for: Multi-user/org memory hierarchies (Mem0), agent state management (Letta), Python-based agents (honcho), Markdown-preferred workflows (memsearch)
+❌ **Never consolidating** — Over time, memories become fragmented. Run consolidate periodically.
+❌ **Ignoring decay** — Memories naturally decay. Review stale memories regularly.
+❌ **Single namespace for everything** — Use namespaces to isolate different contexts.
 
 ### Example Flow
 
@@ -262,6 +254,9 @@ Agent response: "Got it — tabs over spaces. I'll remember that."
 The skill includes a CLI for easy shell access:
 
 ```bash
+# Initial setup (interactive, saves to ~/.memoclaw/config.json)
+memoclaw init
+
 # Check free tier status
 memoclaw status
 
@@ -294,6 +289,9 @@ memoclaw consolidate --namespace default --dry-run
 # Get proactive suggestions
 memoclaw suggested --category stale --limit 10
 
+# Migrate .md files to MemoClaw
+memoclaw migrate ./memory/
+
 # Manage relations
 memoclaw relations list <memory-id>
 memoclaw relations create <memory-id> <target-id> related_to
@@ -303,11 +301,13 @@ memoclaw relations delete <memory-id> <relation-id>
 **Setup:**
 ```bash
 npm install -g memoclaw
+memoclaw init              # Interactive setup — saves config to ~/.memoclaw/config.json
+# OR manual:
 export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 ```
 
 **Environment variables:**
-- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required)
+- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required, or use `memoclaw init`)
 
 **Free tier:** First 1000 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
@@ -332,22 +332,30 @@ The CLI handles both automatically. Just set your private key and go.
 
 | Operation | Price |
 |-----------|-------|
-| Store memory | $0.001 |
-| Store batch (up to 100) | $0.01 |
-| Update memory | $0.001 |
-| Recall (semantic search) | $0.001 |
-| List memories | $0.0005 |
-| Delete memory | $0.0001 |
+| Store memory | $0.005 |
+| Store batch (up to 100) | $0.04 |
+| Update memory | $0.005 |
+| Recall (semantic search) | $0.005 |
+| Extract facts | $0.01 |
+| Consolidate | $0.01 |
+| Ingest | $0.01 |
+| Context | $0.01 |
+| Migrate (per request) | $0.01 |
+
+**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Core memories, Relations, History, Export, Namespaces, Stats
 
 ## Setup
 
 ```bash
 npm install -g memoclaw
-export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
+memoclaw init    # Interactive setup — saves to ~/.memoclaw/config.json
 memoclaw status  # Check your free tier remaining
 ```
 
-That's it. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+That's it. `memoclaw init` walks you through wallet setup and saves config locally. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+
+**Docs:** https://docs.memoclaw.com
+**MCP Server:** `npm install -g memoclaw-mcp` (for tool-based access from MCP-compatible clients)
 
 ## API Reference
 
@@ -781,7 +789,7 @@ const results = await memoclaw.recall("what timezone is the user in?");
 ## Status Check
 
 ```
-GET /v1/status
+GET /v1/free-tier/status
 ```
 
 Returns wallet info and free tier usage. No payment required.

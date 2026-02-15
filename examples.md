@@ -267,9 +267,9 @@ For typical agent usage:
 
 | Daily Activity | Operations | Cost |
 |----------------|------------|------|
-| 10 stores | 10 × $0.001 | $0.01 |
-| 20 recalls | 20 × $0.001 | $0.02 |
-| 2 list queries | 2 × $0.0005 | $0.001 |
-| **Total** | | **~$0.03/day** |
+| 10 stores | 10 × $0.005 | $0.05 |
+| 20 recalls | 20 × $0.005 | $0.10 |
+| 2 list queries | Free | $0.00 |
+| **Total** | | **~$0.15/day** |
 
-At ~$0.03/day, that's less than $1/month for continuous agent memory.
+At ~$0.15/day, that's under $5/month for continuous agent memory.
