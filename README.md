@@ -52,21 +52,17 @@ memoclaw store "Session 2026-02-13: Discussed project priorities" --importance 0
 **Free Tier:** 1000 calls per wallet — no payment required.
 
 After free tier (USDC on Base):
-- Store: $0.001
-- Recall: $0.001
-- List: $0.0005
-- Update: $0.001
-- Delete: $0.0001
-- Ingest/Extract/Consolidate: $0.005
-- Suggested: $0.001
-- Relations: $0.0005
+- Store/Recall/Update: $0.005
+- Store batch (up to 100): $0.04
+- Extract/Ingest/Consolidate/Context/Migrate: $0.01
+- List, Get, Delete, Search, Suggested, Relations, Export, Stats: **Free**
 
 Your wallet address is your identity — no signup needed.
 
 ## Links
 
 - **API**: https://api.memoclaw.com
-- **Docs**: https://memoclaw.com/docs
+- **Docs**: https://docs.memoclaw.com
 - **Website**: https://memoclaw.com
 
 ## License
