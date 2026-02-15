@@ -21,7 +21,7 @@ Memory-as-a-Service for AI agents. Store and recall memories with semantic vecto
 
 **No API keys. No registration.** Your wallet address is your identity.
 
-**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments ($0.001/call USDC on Base).
+**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
 
 ---
 
