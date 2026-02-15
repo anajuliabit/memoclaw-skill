@@ -254,6 +254,9 @@ Agent response: "Got it — tabs over spaces. I'll remember that."
 The skill includes a CLI for easy shell access:
 
 ```bash
+# Initial setup (interactive, saves to ~/.memoclaw/config.json)
+memoclaw init
+
 # Check free tier status
 memoclaw status
 
@@ -298,11 +301,13 @@ memoclaw relations delete <memory-id> <relation-id>
 **Setup:**
 ```bash
 npm install -g memoclaw
+memoclaw init              # Interactive setup — saves config to ~/.memoclaw/config.json
+# OR manual:
 export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 ```
 
 **Environment variables:**
-- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required)
+- `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required, or use `memoclaw init`)
 
 **Free tier:** First 1000 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
@@ -333,17 +338,21 @@ The CLI handles both automatically. Just set your private key and go.
 | Recall (semantic search) | $0.001 |
 | List memories | $0.0005 |
 | Delete memory | $0.0001 |
+| Extract facts | $0.005 |
+| Consolidate | $0.005 |
+| Suggested | $0.001 |
+| Relations (create/list/delete) | $0.0005 |
 | Migrate (per request) | $0.005 |
 
 ## Setup
 
 ```bash
 npm install -g memoclaw
-export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
+memoclaw init    # Interactive setup — saves to ~/.memoclaw/config.json
 memoclaw status  # Check your free tier remaining
 ```
 
-That's it. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+That's it. `memoclaw init` walks you through wallet setup and saves config locally. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
 
 **Docs:** https://docs.memoclaw.com
 **MCP Server:** `npm install -g memoclaw-mcp` (for tool-based access from MCP-compatible clients)
@@ -780,7 +789,7 @@ const results = await memoclaw.recall("what timezone is the user in?");
 ## Status Check
 
 ```
-GET /v1/status
+GET /v1/free-tier/status
 ```
 
 Returns wallet info and free tier usage. No payment required.
