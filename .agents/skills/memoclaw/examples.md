@@ -1,20 +1,157 @@
-# MemoClaw Usage Examples
+# MemoClaw usage examples
 
-All examples use x402 for payment. Your wallet address becomes your identity.
+## Example 1: CLI basics
 
-## Example 1: User Preferences
+The fastest way to use MemoClaw. Install once, then store and recall from any shell.
+
+```bash
+# Setup (one-time)
+npm install -g memoclaw
+memoclaw init    # Interactive wallet setup — saves to ~/.memoclaw/config.json
+memoclaw status  # Check your free tier remaining
+
+# Store a memory
+memoclaw store "User prefers vim keybindings" --importance 0.8 --tags tools,preferences
+
+# Recall memories
+memoclaw recall "editor preferences" --limit 5
+
+# Full-text keyword search (free, no embeddings)
+memoclaw search "vim" --namespace default
+```
+
+## Example 2: OpenClaw agent session
+
+Typical flow for an OpenClaw agent using MemoClaw throughout a session:
+
+```bash
+# Session start — load relevant context
+memoclaw context "user preferences and recent decisions" --max-memories 10
+
+# User says "I switched to Neovim last week"
+memoclaw recall "editor preferences"         # check for existing memory
+memoclaw store "User switched to Neovim (Feb 2026)" \
+  --importance 0.85 --tags preferences,tools --memory-type preference
+
+# User asks "what did we decide about the database?"
+memoclaw recall "database decision" --namespace project-alpha
+
+# Session end — store a summary
+memoclaw store "Session 2026-02-16: Discussed editor migration, reviewed DB schema" \
+  --importance 0.6 --tags session-summary
+
+# Periodic maintenance
+memoclaw consolidate --namespace default --dry-run
+memoclaw suggested --category stale --limit 5
+```
+
+## Example 3: Ingesting raw text
+
+Feed a conversation or document and let MemoClaw extract, deduplicate, and relate facts automatically.
+
+```bash
+# Extract facts from a sentence
+memoclaw ingest "User's name is Ana. She lives in São Paulo. She works with TypeScript."
+
+# Or from a file
+memoclaw ingest "$(cat conversation.txt)" --namespace default --auto-relate
+
+# Extract without dedup (just parse facts)
+memoclaw extract "I prefer dark mode and use 2-space indentation"
+```
+
+## Example 4: Project namespaces
+
+Keep memories organized per project.
+
+```bash
+# Store architecture decisions scoped to a project
+memoclaw store "Team chose PostgreSQL over MongoDB for ACID requirements" \
+  --importance 0.9 --tags architecture,database --namespace project-alpha
+
+# Recall only from that project
+memoclaw recall "what database did we choose?" --namespace project-alpha
+
+# List all namespaces
+memoclaw namespaces
+
+# Export a project's memories
+memoclaw export --format markdown --namespace project-alpha
+```
+
+## Example 5: Memory lifecycle
+
+Storing, updating, pinning, relating, and deleting.
+
+```bash
+# Store
+memoclaw store "User timezone is America/Sao_Paulo (UTC-3)" \
+  --importance 0.7 --tags user-info --memory-type preference
+
+# Update when things change
+memoclaw update <uuid> --content "User timezone is America/New_York (UTC-5)" --importance 0.8
+
+# Pin a memory so it never decays
+memoclaw update <uuid> --pinned true
+
+# Link related memories
+memoclaw relations create <uuid-1> <uuid-2> supersedes
+
+# View change history
+memoclaw history <uuid>
+
+# Delete when no longer relevant
+memoclaw delete <uuid>
+```
+
+## Example 6: Consolidation and maintenance
+
+Over time, memories fragment. Consolidate periodically.
+
+```bash
+# Preview what would merge (dry run)
+memoclaw consolidate --namespace default --dry-run
+
+# Actually merge duplicates
+memoclaw consolidate --namespace default
+
+# Find stale memories worth reviewing
+memoclaw suggested --category stale --limit 10
+
+# Bulk delete an old project
+memoclaw purge --namespace old-project
+```
+
+## Example 7: Migrating from local markdown files
+
+If you've been using `MEMORY.md` or `memory/*.md` files:
+
+```bash
+# Import all .md files at once
+memoclaw migrate ./memory/
+
+# Verify what was stored
+memoclaw list --limit 50
+memoclaw recall "user preferences"
+
+# Pin the essentials
+memoclaw update <id> --pinned true
+```
+
+Run both systems in parallel for a week before phasing out local files.
+
+## Example 8: JavaScript SDK
 
 ```javascript
 import { x402Fetch } from '@x402/fetch';
 
-// Store a preference (with optional TTL)
+// Store a preference
 await x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
   wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
     content: "Ana prefers coffee without sugar, always in the morning",
-    metadata: { tags: ["preferences", "food"], context: "morning routine" },
-    importance: 0.8,
-    expires_at: "2026-12-31T23:59:59Z" // optional: auto-expire
+    metadata: { tags: ["preferences", "food"] },
+    importance: 0.8
   }
 });
 
@@ -26,215 +163,14 @@ const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
     limit: 3
   }
 });
-
-console.log(result.memories[0].content);
-// → "Ana prefers coffee without sugar, always in the morning"
 ```
 
-## Example 2: Project-Specific Knowledge
-
-```javascript
-// Store architecture decisions in a namespace
-await x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    content: "Team decided PostgreSQL over MongoDB for ACID requirements",
-    metadata: { tags: ["architecture", "database"] },
-    importance: 0.9,
-    namespace: "project-alpha"
-  }
-});
-
-// Recall only from that project
-const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    query: "what database did we choose and why?",
-    namespace: "project-alpha"
-  }
-});
-```
-
-## Example 3: Batch Import
-
-```javascript
-// Import multiple memories at once ($0.04 for up to 100)
-await x402Fetch('POST', 'https://api.memoclaw.com/v1/store/batch', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    memories: [
-      {
-        content: "User timezone is America/Sao_Paulo (UTC-3)",
-        metadata: { tags: ["user-info"] },
-        importance: 0.7
-      },
-      {
-        content: "User prefers responses in Portuguese for casual chat",
-        metadata: { tags: ["preferences", "language"] },
-        importance: 0.9
-      },
-      {
-        content: "User works primarily with TypeScript and Bun runtime",
-        metadata: { tags: ["tools", "tech-stack"] },
-        importance: 0.8
-      }
-    ]
-  }
-});
-```
-
-## Example 4: Filtered Recall
-
-```javascript
-// Recall only recent food preferences
-const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    query: "food and drink preferences",
-    limit: 10,
-    min_similarity: 0.6,
-    filters: {
-      tags: ["food", "preferences"],
-      after: "2025-01-01"
-    }
-  }
-});
-```
-
-## Example 5: Memory Management
-
-```javascript
-// List all memories in a namespace
-const list = await x402Fetch('GET', 
-  'https://api.memoclaw.com/v1/memories?namespace=project-alpha&limit=50',
-  { wallet: process.env.MEMOCLAW_PRIVATE_KEY }
-);
-
-console.log(`Found ${list.total} memories`);
-
-// Update a memory (only provided fields change)
-await x402Fetch('PATCH',
-  `https://api.memoclaw.com/v1/memories/${memoryId}`,
-  {
-    wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-    body: {
-      content: "Updated: Team chose PostgreSQL 16 (upgraded from 15)",
-      importance: 0.95
-    }
-  }
-);
-
-// Set a TTL on a memory
-await x402Fetch('PATCH',
-  `https://api.memoclaw.com/v1/memories/${memoryId}`,
-  {
-    wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-    body: { expires_at: "2026-06-01T00:00:00Z" }
-  }
-);
-
-// Delete a specific memory
-await x402Fetch('DELETE',
-  `https://api.memoclaw.com/v1/memories/${memoryId}`,
-  { wallet: process.env.MEMOCLAW_PRIVATE_KEY }
-);
-```
-
-## Example 6: CLI Usage
-
-```bash
-# Setup (one-time)
-npm install -g memoclaw
-memoclaw init    # Interactive wallet setup
-
-# Store a memory
-memoclaw store "User prefers vim keybindings" --importance 0.8 --tags tools,preferences
-
-# Recall memories
-memoclaw recall "editor preferences" --limit 5
-
-# Ingest raw text (auto-extract facts, dedup, and relate)
-memoclaw ingest "User's name is Ana. She lives in São Paulo. She works with TypeScript."
-
-# Extract facts from conversation
-memoclaw extract "I prefer dark mode and use 2-space indentation"
-
-# Consolidate duplicates (preview first)
-memoclaw consolidate --namespace default --dry-run
-memoclaw consolidate --namespace default
-
-# Review stale memories
-memoclaw suggested --category stale --limit 10
-
-# Manage relations between memories
-memoclaw relations list <memory-id>
-memoclaw relations create <memory-id> <target-id> supersedes
-
-# Migrate local markdown files
-memoclaw migrate ./memory/
-
-# Check free tier status
-memoclaw status
-```
-
-## Example 7: Agent Memory Layer
-
-Integrate MemoClaw as a persistent memory layer for any AI agent:
-
-```javascript
-class AgentMemory {
-  constructor(walletKey) {
-    this.wallet = walletKey;
-    this.namespace = 'agent-main';
-  }
-
-  async remember(content, importance = 0.5, tags = []) {
-    // Check for similar existing memory first
-    const existing = await this.recall(content, { limit: 1, min_similarity: 0.9 });
-    if (existing.memories.length > 0) {
-      console.log('Similar memory exists, skipping');
-      return existing.memories[0];
-    }
-    
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
-      wallet: this.wallet,
-      body: { content, importance, metadata: { tags }, namespace: this.namespace }
-    });
-  }
-
-  async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-      wallet: this.wallet,
-      body: { query, namespace: this.namespace, ...options }
-    });
-  }
-
-  async onUserCorrection(wrongAssumption, correction) {
-    // Store corrections with high importance
-    await this.remember(
-      `Correction: Previously assumed "${wrongAssumption}" but actually: ${correction}`,
-      0.95,
-      ['correction', 'learning']
-    );
-  }
-
-  async onSessionStart() {
-    // Load recent high-importance memories
-    return this.recall('recent important context', {
-      limit: 10,
-      min_similarity: 0.3 // Lower threshold for broad context
-    });
-  }
-}
-```
-
-## Example 8: Python SDK
+## Example 9: Python SDK
 
 ```python
 from memoclaw import MemoClawClient
 
 async with MemoClawClient(private_key="0xYourKey") as client:
-    # Store a memory
     result = await client.store(
         content="User prefers async/await over callbacks",
         importance=0.8,
@@ -242,7 +178,6 @@ async with MemoClawClient(private_key="0xYourKey") as client:
         memory_type="preference",
     )
 
-    # Recall memories
     memories = await client.recall(
         query="coding style preferences",
         limit=5,
@@ -250,26 +185,19 @@ async with MemoClawClient(private_key="0xYourKey") as client:
     )
     for m in memories:
         print(f"[{m.similarity:.2f}] {m.content}")
-
-    # Ingest raw text
-    ingest_result = await client.ingest(
-        text="User uses Neovim on macOS. Timezone is PST.",
-        auto_relate=True,
-    )
-    print(f"Extracted {ingest_result.facts_extracted} facts")
 ```
 
 Install: `pip install memoclaw`
 
-## Cost Breakdown
+## Cost breakdown
 
-For typical agent usage:
+For a typical agent running daily:
 
-| Daily Activity | Operations | Cost |
-|----------------|------------|------|
+| Activity | Operations | Cost |
+|----------|-----------|------|
 | 10 stores | 10 × $0.005 | $0.05 |
 | 20 recalls | 20 × $0.005 | $0.10 |
 | 2 list queries | Free | $0.00 |
 | **Total** | | **~$0.15/day** |
 
-At ~$0.15/day, that's under $5/month for continuous agent memory.
+Under $5/month for continuous agent memory. First 100 calls are free.
