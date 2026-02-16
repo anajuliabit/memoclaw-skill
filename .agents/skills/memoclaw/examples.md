@@ -58,7 +58,7 @@ const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
 ## Example 3: Batch Import
 
 ```javascript
-// Import multiple memories at once ($0.01 for up to 100)
+// Import multiple memories at once ($0.04 for up to 100)
 await x402Fetch('POST', 'https://api.memoclaw.com/v1/store/batch', {
   wallet: process.env.MEMOCLAW_PRIVATE_KEY,
   body: {
