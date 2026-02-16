@@ -798,7 +798,7 @@ Response:
 ```json
 {
   "wallet": "0xYourAddress",
-  "free_calls_remaining": 847,
+  "free_calls_remaining": 73,
   "free_calls_total": 100,
   "plan": "free"
 }
