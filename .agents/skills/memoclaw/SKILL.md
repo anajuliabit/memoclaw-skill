@@ -1,9 +1,9 @@
 ---
 name: memoclaw
-version: 1.8.6
+version: 1.9.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
-  vector search. 1000 free calls per wallet, then x402 micropayments.
+  vector search. 100 free calls per wallet, then x402 micropayments.
   Your wallet address is your identity.
 allowed-tools:
   - exec
@@ -12,7 +12,7 @@ allowed-tools:
 <security>
 This skill requires MEMOCLAW_PRIVATE_KEY environment variable for wallet auth.
 Use a dedicated wallet. The skill only makes HTTPS calls to api.memoclaw.com.
-Free tier: 1000 calls per wallet. After that, USDC on Base required.
+Free tier: 100 calls per wallet. After that, USDC on Base required.
 </security>
 
 # MemoClaw Skill
@@ -21,7 +21,7 @@ Memory-as-a-Service for AI agents. Store and recall memories with semantic vecto
 
 **No API keys. No registration.** Your wallet address is your identity.
 
-**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
+**Free Tier:** Every wallet gets **100 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
 
 ---
 
@@ -309,7 +309,7 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 **Environment variables:**
 - `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required, or use `memoclaw init`)
 
-**Free tier:** First 1000 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
+**Free tier:** First 100 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
 ---
 
@@ -319,14 +319,14 @@ MemoClaw uses wallet-based identity. Your wallet address is your user ID.
 
 **Two auth methods:**
 
-1. **Free Tier (default)** — Sign a message with your wallet, get 1000 free calls
+1. **Free Tier (default)** — Sign a message with your wallet, get 100 free calls
 2. **x402 Payment** — Pay per call with USDC on Base (kicks in after free tier)
 
 The CLI handles both automatically. Just set your private key and go.
 
 ## Pricing
 
-**Free Tier:** 1000 calls per wallet (no payment required)
+**Free Tier:** 100 calls per wallet (no payment required)
 
 **After Free Tier (USDC on Base):**
 
@@ -799,7 +799,7 @@ Response:
 {
   "wallet": "0xYourAddress",
   "free_calls_remaining": 847,
-  "free_calls_total": 1000,
+  "free_calls_total": 100,
   "plan": "free"
 }
 ```
