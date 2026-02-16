@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.10.0
+version: 1.11.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -266,6 +266,9 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
 memoclaw recall "user settings" --memory-type preference
+
+# Get a single memory by ID
+memoclaw get <uuid>
 
 # List all memories
 memoclaw list --namespace default --limit 20
@@ -545,6 +548,31 @@ Fields (all optional, at least one required):
 - `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
 - `pinned`: Boolean — pinned memories are exempt from decay
 
+### Get single memory
+
+```
+GET /v1/memories/{id}
+```
+
+Returns full memory with metadata, relations, and current importance.
+
+Response:
+```json
+{
+  "id": "550e8400-e29b-41d4-a716-446655440000",
+  "content": "User prefers dark mode",
+  "metadata": {"tags": ["preferences", "ui"]},
+  "importance": 0.8,
+  "memory_type": "preference",
+  "namespace": "default",
+  "pinned": false,
+  "created_at": "2025-01-15T10:30:00Z",
+  "updated_at": "2025-01-15T10:30:00Z"
+}
+```
+
+CLI: `memoclaw get <uuid>`
+
 ### Delete memory
 
 ```
@@ -556,6 +584,56 @@ Response:
 {
   "deleted": true,
   "id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Bulk delete
+
+```
+POST /v1/memories/bulk-delete
+```
+
+Delete multiple memories at once. Free.
+
+Request:
+```json
+{
+  "ids": ["uuid1", "uuid2", "uuid3"]
+}
+```
+
+Response:
+```json
+{
+  "deleted": 3
+}
+```
+
+CLI: `memoclaw purge --namespace old-project` (deletes all in namespace)
+
+### Batch update
+
+```
+PATCH /v1/memories/batch
+```
+
+Update multiple memories in one request. Charged $0.005 per request (not per memory) if any content changes trigger re-embedding.
+
+Request:
+```json
+{
+  "updates": [
+    {"id": "uuid1", "importance": 0.9, "pinned": true},
+    {"id": "uuid2", "content": "Updated fact", "importance": 0.8}
+  ]
+}
+```
+
+Response:
+```json
+{
+  "updated": 2,
+  "memories": [...]
 }
 ```
 
@@ -929,38 +1007,29 @@ Error codes:
 - `NOT_FOUND` (404) — Memory not found
 - `INTERNAL_ERROR` (500) — Server error
 
-## Example: Agent Integration
+## Example: OpenClaw agent workflow
 
-For Clawdbot or similar agents, add MemoClaw as a memory layer:
+Typical flow for an OpenClaw agent using MemoClaw via CLI:
 
-```javascript
-import { x402Fetch } from '@x402/fetch';
+```bash
+# Session start — load context
+memoclaw context "user preferences and recent decisions" --max-memories 10
 
-const memoclaw = {
-  async store(content, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
-      wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-      body: { content, ...options }
-    });
-  },
-  
-  async recall(query, options = {}) {
-    return x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-      wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-      body: { query, ...options }
-    });
-  }
-};
+# User says "I switched to Neovim last week"
+memoclaw recall "editor preferences"         # check existing
+memoclaw store "User switched to Neovim (Feb 2026)" \
+  --importance 0.85 --tags preferences,tools --memory-type preference
 
-// Store a memory
-await memoclaw.store("User's timezone is America/Sao_Paulo", {
-  metadata: { tags: ["user-info"] },
-  importance: 0.7,
-  memory_type: "preference"
-});
+# User asks "what did we decide about the database?"
+memoclaw recall "database decision" --namespace project-alpha
 
-// Recall later
-const results = await memoclaw.recall("what timezone is the user in?");
+# Session end — summarize
+memoclaw store "Session 2026-02-16: Discussed editor migration to Neovim, reviewed DB schema" \
+  --importance 0.6 --tags session-summary
+
+# Periodic maintenance
+memoclaw consolidate --namespace default --dry-run
+memoclaw suggested --category stale --limit 5
 ```
 
 ---
