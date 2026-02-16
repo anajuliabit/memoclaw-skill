@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.9.3
+version: 1.10.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -35,7 +35,7 @@ Is the information worth remembering across sessions?
 └─ YES → Is it a secret (password, API key, token)?
    ├─ YES → NEVER store in MemoClaw. Use a secrets manager.
    └─ NO → Is it already stored?
-      ├─ UNKNOWN → Recall first, then decide.
+      ├─ UNKNOWN → Recall first (or `search` for free keyword lookup), then decide.
       ├─ YES → Is the existing memory outdated?
       │  ├─ YES → Update the existing memory (PATCH).
       │  └─ NO → Skip. Don't duplicate.
@@ -131,7 +131,8 @@ Use these to assign importance consistently:
 ### Session lifecycle
 
 #### Session start
-1. **Recall recent context**: `memoclaw recall "recent important context" --limit 5`
+1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
+   — or manually: `memoclaw recall "recent important context" --limit 5`
 2. **Recall user basics**: `memoclaw recall "user preferences and info" --limit 5`
 3. Use this context to personalize your responses
 
@@ -294,6 +295,24 @@ memoclaw migrate ./memory/
 memoclaw relations list <memory-id>
 memoclaw relations create <memory-id> <target-id> related_to
 memoclaw relations delete <memory-id> <relation-id>
+
+# Assemble context block for LLM prompts
+memoclaw context "user preferences and recent decisions" --max-memories 10
+
+# Full-text keyword search (free, no embeddings)
+memoclaw search "PostgreSQL" --namespace project-alpha
+
+# Export memories
+memoclaw export --format markdown --namespace default
+
+# List namespaces with memory counts
+memoclaw namespaces
+
+# Usage statistics
+memoclaw stats
+
+# View memory change history
+memoclaw history <uuid>
 ```
 
 **Setup:**
@@ -699,6 +718,168 @@ GET /v1/memories/:id/relations
 ```
 DELETE /v1/memories/:id/relations/:relationId
 ```
+
+### Assemble context
+
+```
+POST /v1/context
+```
+
+Build a ready-to-use context block from your memories for LLM prompts.
+
+Request:
+```json
+{
+  "query": "user preferences and project context",
+  "namespace": "default",
+  "max_memories": 5,
+  "max_tokens": 2000,
+  "format": "text",
+  "include_metadata": false,
+  "summarize": false
+}
+```
+
+Response:
+```json
+{
+  "context": "The user prefers dark mode...",
+  "memories_used": 5,
+  "tokens": 450
+}
+```
+
+Fields:
+- `query` (required): Natural language description of what context you need
+- `namespace`: Filter by namespace
+- `max_memories`: Max memories to include (default: 10, max: 100)
+- `max_tokens`: Target token limit for output (default: 4000, range: 100-16000)
+- `format`: `"text"` (plain) or `"structured"` (JSON with metadata)
+- `include_metadata`: Include tags, importance, type in output (default: false)
+- `summarize`: Use LLM to merge similar memories in output (default: false)
+
+CLI: `memoclaw context "user preferences and project context" --max-memories 5`
+
+### Search (full-text)
+
+```
+POST /v1/search
+```
+
+Keyword search using BM25 ranking. Free alternative to semantic recall when you know the exact terms.
+
+Request:
+```json
+{
+  "query": "PostgreSQL migration",
+  "limit": 10,
+  "namespace": "project-alpha",
+  "memory_type": "decision",
+  "tags": ["architecture"]
+}
+```
+
+Response:
+```json
+{
+  "memories": [...],
+  "total": 3
+}
+```
+
+CLI: `memoclaw search "PostgreSQL migration" --namespace project-alpha`
+
+### Memory history
+
+```
+GET /v1/memories/{id}/history
+```
+
+Returns full change history for a memory (every update tracked).
+
+Response:
+```json
+{
+  "history": [
+    {
+      "id": "uuid",
+      "memory_id": "uuid",
+      "changes": {"importance": 0.95, "content": "updated text"},
+      "created_at": "2026-02-11T15:30:00Z"
+    }
+  ]
+}
+```
+
+### Memory graph
+
+```
+GET /v1/memories/{id}/graph?depth=2&limit=50
+```
+
+Traverse the knowledge graph of related memories up to N hops.
+
+Query params:
+- `depth`: Max hops (default: 2, max: 5)
+- `limit`: Max memories returned (default: 50, max: 200)
+- `relation_types`: Comma-separated filter (`related_to,supersedes,contradicts,supports,derived_from`)
+
+### Export memories
+
+```
+GET /v1/export?format=json&namespace=default
+```
+
+Export memories in `json`, `csv`, or `markdown` format.
+
+Query params:
+- `format`: `json`, `csv`, or `markdown` (default: json)
+- `namespace`, `memory_type`, `tags`, `before`, `after`: Filters
+
+CLI: `memoclaw export --format markdown --namespace default`
+
+### List namespaces
+
+```
+GET /v1/namespaces
+```
+
+Returns all namespaces with memory counts.
+
+Response:
+```json
+{
+  "namespaces": [
+    {"name": "default", "count": 42, "last_memory_at": "2026-02-16T10:00:00Z"},
+    {"name": "project-alpha", "count": 15, "last_memory_at": "2026-02-15T08:00:00Z"}
+  ],
+  "total": 2
+}
+```
+
+CLI: `memoclaw namespaces`
+
+### Usage stats
+
+```
+GET /v1/stats
+```
+
+Aggregate statistics: total memories, pinned count, never-accessed count, average importance, breakdowns by type and namespace.
+
+CLI: `memoclaw stats`
+
+### Migrate markdown files
+
+```
+POST /v1/migrate
+```
+
+Import `.md` files. The API extracts facts, creates memories, and deduplicates.
+
+CLI: `memoclaw migrate ./memory/`
+
+---
 
 ## When to store
 
