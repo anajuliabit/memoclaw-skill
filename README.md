@@ -49,7 +49,7 @@ memoclaw store "Session 2026-02-13: Discussed project priorities" --importance 0
 
 ## Pricing
 
-**Free Tier:** 1000 calls per wallet — no payment required.
+**Free Tier:** 100 calls per wallet — no payment required.
 
 After free tier (USDC on Base):
 - Store/Recall/Update: $0.005
