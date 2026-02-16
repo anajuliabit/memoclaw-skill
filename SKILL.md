@@ -3,7 +3,7 @@ name: memoclaw
 version: 1.9.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
-  vector search. 100 free calls per wallet, then x402 micropayments.
+  vector search. 1000 free calls per wallet, then x402 micropayments.
   Your wallet address is your identity.
 allowed-tools:
   - exec
@@ -21,7 +21,7 @@ Memory-as-a-Service for AI agents. Store and recall memories with semantic vecto
 
 **No API keys. No registration.** Your wallet address is your identity.
 
-**Free Tier:** Every wallet gets **100 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
+**Free Tier:** Every wallet gets **1000 free API calls**. Just sign with your wallet — no payment required. After that, x402 micropayments (from $0.005/call USDC on Base).
 
 ---
 
@@ -319,7 +319,7 @@ MemoClaw uses wallet-based identity. Your wallet address is your user ID.
 
 **Two auth methods:**
 
-1. **Free Tier (default)** — Sign a message with your wallet, get 100 free calls
+1. **Free Tier (default)** — Sign a message with your wallet, get 1000 free calls
 2. **x402 Payment** — Pay per call with USDC on Base (kicks in after free tier)
 
 The CLI handles both automatically. Just set your private key and go.
