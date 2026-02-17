@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.12.1
+version: 1.13.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -328,6 +328,24 @@ memoclaw stats
 
 # View memory change history
 memoclaw history <uuid>
+
+# Quick memory count
+memoclaw count
+memoclaw count --namespace project-alpha
+
+# Interactive memory browser (REPL)
+memoclaw browse
+
+# Import memories from JSON export
+memoclaw import memories.json
+
+# Show/validate config
+memoclaw config show
+memoclaw config check
+
+# Shell completions
+memoclaw completions bash >> ~/.bashrc
+memoclaw completions zsh >> ~/.zshrc
 ```
 
 **Setup:**
@@ -951,6 +969,34 @@ Response:
 ```
 
 CLI: `memoclaw namespaces`
+
+### Core memories
+
+```
+GET /v1/core-memories?limit=10&namespace=default
+```
+
+Returns the most important, frequently accessed, and pinned memories — the "core" of your memory store. Free endpoint.
+
+Response:
+```json
+{
+  "memories": [
+    {
+      "id": "uuid",
+      "content": "User's name is Ana",
+      "importance": 0.95,
+      "pinned": true,
+      "access_count": 42,
+      "memory_type": "preference",
+      "namespace": "default"
+    }
+  ],
+  "total": 5
+}
+```
+
+CLI: `memoclaw list --sort importance --limit 10` (approximate equivalent)
 
 ### Usage stats
 
