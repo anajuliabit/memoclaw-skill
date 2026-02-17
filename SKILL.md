@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.12.0
+version: 1.12.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -405,7 +405,8 @@ Request:
   "importance": 0.8,
   "namespace": "project-alpha",
   "memory_type": "preference",
-  "expires_at": "2026-06-01T00:00:00Z"
+  "expires_at": "2026-06-01T00:00:00Z",
+  "immutable": false
 }
 ```
 
@@ -428,6 +429,7 @@ Fields:
 - `agent_id`: Agent identifier for multi-agent scoping
 - `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
 - `pinned`: Boolean — pinned memories are exempt from decay (default: false)
+- `immutable`: Boolean — immutable memories cannot be updated or deleted (default: false)
 
 ### Store batch
 
@@ -559,6 +561,7 @@ Fields (all optional, at least one required):
 - `namespace`: Move to a different namespace
 - `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
 - `pinned`: Boolean — pinned memories are exempt from decay
+- `immutable`: Boolean — lock memory from further updates or deletion
 
 ### Get single memory
 
