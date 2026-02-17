@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.11.1
+version: 1.12.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -294,10 +294,22 @@ memoclaw suggested --category stale --limit 10
 # Migrate .md files to MemoClaw
 memoclaw migrate ./memory/
 
+# Batch update multiple memories
+memoclaw batch-update '[{"id":"uuid1","importance":0.9},{"id":"uuid2","pinned":true}]'
+
+# Bulk delete memories by ID
+memoclaw bulk-delete uuid1 uuid2 uuid3
+
+# Delete all memories in a namespace
+memoclaw purge --namespace old-project
+
 # Manage relations
 memoclaw relations list <memory-id>
 memoclaw relations create <memory-id> <target-id> related_to
 memoclaw relations delete <memory-id> <relation-id>
+
+# Traverse the memory graph
+memoclaw graph <memory-id> --depth 2 --limit 50
 
 # Assemble context block for LLM prompts
 memoclaw context "user preferences and recent decisions" --max-memories 10
