@@ -5,7 +5,7 @@ Semantic memory API for AI agents. Wallet = identity.
 ## Install
 
 ```bash
-npx skills add anajuliabit/memoclaw-skill
+clawhub install memoclaw
 ```
 
 Or manually copy `SKILL.md` to your agent's skills directory.

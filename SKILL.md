@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.13.0
+version: 1.14.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -1007,6 +1007,43 @@ GET /v1/stats
 Aggregate statistics: total memories, pinned count, never-accessed count, average importance, breakdowns by type and namespace.
 
 CLI: `memoclaw stats`
+
+### Count memories
+
+```
+GET /v1/memories/count?namespace=default
+```
+
+Quick count of memories, optionally filtered by namespace.
+
+Response:
+```json
+{
+  "count": 42
+}
+```
+
+CLI: `memoclaw count` or `memoclaw count --namespace project-alpha`
+
+### Import memories
+
+```
+POST /v1/import
+```
+
+Import memories from a JSON export (produced by `memoclaw export --format json`). Free.
+
+Request: JSON array of memory objects (same format as export output).
+
+Response:
+```json
+{
+  "imported": 15,
+  "skipped": 2
+}
+```
+
+CLI: `memoclaw import memories.json`
 
 ### Migrate markdown files
 
