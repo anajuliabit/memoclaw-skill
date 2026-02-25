@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.14.0
+version: 1.14.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -133,7 +133,7 @@ Use these to assign importance consistently:
 #### Session start
 1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Recall user basics**: `memoclaw recall "user preferences and info" --limit 5`
+2. **Quick essentials** (free): `memoclaw core-memories --limit 5` — returns your highest-importance, most-accessed, and pinned memories without using embeddings
 3. Use this context to personalize your responses
 
 #### During session
@@ -260,7 +260,7 @@ memoclaw init
 memoclaw status
 
 # Store a memory
-memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
+memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
 
 # Recall memories
 memoclaw recall "what theme does user prefer"
@@ -316,6 +316,10 @@ memoclaw context "user preferences and recent decisions" --max-memories 10
 
 # Full-text keyword search (free, no embeddings)
 memoclaw search "PostgreSQL" --namespace project-alpha
+
+# Core memories (free — highest importance, most accessed, pinned)
+memoclaw core-memories --limit 10
+memoclaw core-memories --namespace project-alpha
 
 # Export memories
 memoclaw export --format markdown --namespace default
@@ -1110,8 +1114,10 @@ Error codes:
 Typical flow for an OpenClaw agent using MemoClaw via CLI:
 
 ```bash
-# Session start — load context
+# Session start — load context (pick one)
 memoclaw context "user preferences and recent decisions" --max-memories 10
+# or free alternative for essentials:
+memoclaw core-memories --limit 5
 
 # User says "I switched to Neovim last week"
 memoclaw recall "editor preferences"         # check existing
