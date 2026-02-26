@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.14.1
+version: 1.15.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -22,6 +22,18 @@ Persistent memory for AI agents. Store text, recall it later with semantic searc
 No API keys. No registration. Your wallet address is your identity.
 
 Every wallet gets 100 free API calls — just sign and go. After that, x402 micropayments ($0.005/call, USDC on Base).
+
+---
+
+## Prerequisites checklist
+
+Before using any MemoClaw command, ensure setup is complete:
+
+1. **CLI installed?** → `which memoclaw` — if missing: `npm install -g memoclaw`
+2. **Wallet configured?** → `memoclaw config check` — if not: `memoclaw init`
+3. **Free tier remaining?** → `memoclaw status` — if 0: fund wallet with USDC on Base
+
+If `memoclaw init` has never been run, **all commands will fail**. Run it first — it's interactive and takes 30 seconds.
 
 ---
 
@@ -1235,3 +1247,50 @@ memoclaw recall "user communication style" --agent-id agent-main
 ```
 
 Use `agent_id` for per-agent isolation and `session_id` for per-conversation scoping. Namespaces are for logical domains (projects), not agents.
+
+---
+
+## Troubleshooting
+
+Common issues and how to fix them:
+
+```
+Command not found: memoclaw
+→ npm install -g memoclaw
+
+"Missing wallet configuration" or auth errors
+→ Run memoclaw init (interactive setup, saves to ~/.memoclaw/config.json)
+→ Or set MEMOCLAW_PRIVATE_KEY environment variable
+
+402 Payment Required but free tier should have calls left
+→ memoclaw status — check free_calls_remaining
+→ If 0: fund wallet with USDC on Base network
+
+"ECONNREFUSED" or network errors
+→ API might be down. Fall back to local files temporarily.
+→ Check https://api.memoclaw.com/v1/free-tier/status with curl
+
+Recall returns no results for something you stored
+→ Check namespace — recall defaults to "default"
+→ Try memoclaw search "keyword" for free text search
+→ Lower min_similarity if results are borderline
+
+Duplicate memories piling up
+→ Always recall before storing to check for existing
+→ Run memoclaw consolidate --namespace default --dry-run to preview merges
+→ Then memoclaw consolidate --namespace default to merge
+
+"Immutable memory cannot be updated"
+→ Memory was stored with immutable: true — it cannot be changed or deleted by design
+```
+
+### Quick health check
+
+Run this sequence to verify everything works:
+
+```bash
+memoclaw config check    # Wallet configured?
+memoclaw status          # Free tier remaining?
+memoclaw count           # How many memories stored?
+memoclaw stats           # Overall health
+```

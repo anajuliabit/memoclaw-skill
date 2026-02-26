@@ -59,11 +59,16 @@ After free tier (USDC on Base):
 
 Your wallet address is your identity — no signup needed.
 
+## Examples
+
+See [examples.md](examples.md) for detailed usage patterns: session lifecycle, ingestion, namespaces, migration, and more.
+
 ## Links
 
 - **API**: https://api.memoclaw.com
 - **Docs**: https://docs.memoclaw.com
 - **Website**: https://memoclaw.com
+- **Skill**: https://clawhub.ai/anajuliabit/memoclaw
 
 ## License
 
