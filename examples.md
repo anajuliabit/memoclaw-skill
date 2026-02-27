@@ -11,7 +11,7 @@ memoclaw init    # Interactive wallet setup — saves to ~/.memoclaw/config.json
 memoclaw status  # Check your free tier remaining
 
 # Store a memory
-memoclaw store "User prefers vim keybindings" --importance 0.8 --tags tools,preferences
+memoclaw store "User prefers vim keybindings" --importance 0.8 --tags tools,preferences --memory-type preference
 
 # Recall memories
 memoclaw recall "editor preferences" --limit 5
@@ -38,7 +38,7 @@ memoclaw recall "database decision" --namespace project-alpha
 
 # Session end — store a summary
 memoclaw store "Session 2026-02-16: Discussed editor migration, reviewed DB schema" \
-  --importance 0.6 --tags session-summary
+  --importance 0.6 --tags session-summary --memory-type observation
 
 # Periodic maintenance
 memoclaw consolidate --namespace default --dry-run
@@ -67,7 +67,7 @@ Keep memories organized per project.
 ```bash
 # Store architecture decisions scoped to a project
 memoclaw store "Team chose PostgreSQL over MongoDB for ACID requirements" \
-  --importance 0.9 --tags architecture,database --namespace project-alpha
+  --importance 0.9 --tags architecture,database --namespace project-alpha --memory-type decision
 
 # Recall only from that project
 memoclaw recall "what database did we choose?" --namespace project-alpha
@@ -87,6 +87,7 @@ Storing, updating, pinning, relating, and deleting.
 # Store
 memoclaw store "User timezone is America/Sao_Paulo (UTC-3)" \
   --importance 0.7 --tags user-info --memory-type preference
+
 
 # Update when things change
 memoclaw update <uuid> --content "User timezone is America/New_York (UTC-5)" --importance 0.8
