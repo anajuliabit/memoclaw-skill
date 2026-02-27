@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.12.0
+version: 1.15.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -22,6 +22,18 @@ Persistent memory for AI agents. Store text, recall it later with semantic searc
 No API keys. No registration. Your wallet address is your identity.
 
 Every wallet gets 100 free API calls — just sign and go. After that, x402 micropayments ($0.005/call, USDC on Base).
+
+---
+
+## Prerequisites checklist
+
+Before using any MemoClaw command, ensure setup is complete:
+
+1. **CLI installed?** → `which memoclaw` — if missing: `npm install -g memoclaw`
+2. **Wallet configured?** → `memoclaw config check` — if not: `memoclaw init`
+3. **Free tier remaining?** → `memoclaw status` — if 0: fund wallet with USDC on Base
+
+If `memoclaw init` has never been run, **all commands will fail**. Run it first — it's interactive and takes 30 seconds.
 
 ---
 
@@ -133,7 +145,7 @@ Use these to assign importance consistently:
 #### Session start
 1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Recall user basics**: `memoclaw recall "user preferences and info" --limit 5`
+2. **Quick essentials** (free): `memoclaw core-memories --limit 5` — returns your highest-importance, most-accessed, and pinned memories without using embeddings
 3. Use this context to personalize your responses
 
 #### During session
@@ -147,7 +159,7 @@ When a session ends or a significant conversation wraps up:
 1. **Summarize key takeaways** and store as a session summary:
    ```bash
    memoclaw store "Session 2026-02-13: Discussed migration to PostgreSQL 16, decided to use pgvector for embeddings, user wants completion by March" \
-     --importance 0.7 --tags session-summary,project-alpha --namespace project-alpha
+     --importance 0.7 --tags session-summary,project-alpha --namespace project-alpha --memory-type project
    ```
 2. **Run consolidation** if many memories were created:
    ```bash
@@ -173,7 +185,7 @@ Session {date}: {brief description}
 ```bash
 # Single command to store a quick session summary
 memoclaw store "Session $(date +%Y-%m-%d): {1-sentence summary}" \
-  --importance 0.6 --tags session-summary
+  --importance 0.6 --tags session-summary --memory-type observation
 ```
 
 #### Conversation digest (via ingest)
@@ -197,7 +209,7 @@ When a new fact contradicts an existing memory:
 2. **Store the new fact** with a `supersedes` relation:
    ```bash
    memoclaw store "User now prefers spaces over tabs (changed 2026-02)" \
-     --importance 0.85 --tags preferences,code-style
+     --importance 0.85 --tags preferences,code-style --memory-type preference
    memoclaw relations create <new-id> <old-id> supersedes
    ```
 3. **Optionally update** the old memory's importance downward or add an expiration
@@ -241,7 +253,7 @@ Agent action:
 → memoclaw recall "tabs spaces indentation preference"
 → No matches found
 → memoclaw store "User prefers tabs over spaces for indentation" \
-    --importance 0.8 --tags preferences,code-style
+    --importance 0.8 --tags preferences,code-style --memory-type preference
 
 Agent response: "Got it — tabs over spaces. I'll remember that."
 ```
@@ -260,7 +272,7 @@ memoclaw init
 memoclaw status
 
 # Store a memory
-memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui
+memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
 
 # Recall memories
 memoclaw recall "what theme does user prefer"
@@ -317,6 +329,10 @@ memoclaw context "user preferences and recent decisions" --max-memories 10
 # Full-text keyword search (free, no embeddings)
 memoclaw search "PostgreSQL" --namespace project-alpha
 
+# Core memories (free — highest importance, most accessed, pinned)
+memoclaw core-memories --limit 10
+memoclaw core-memories --namespace project-alpha
+
 # Export memories
 memoclaw export --format markdown --namespace default
 
@@ -328,6 +344,24 @@ memoclaw stats
 
 # View memory change history
 memoclaw history <uuid>
+
+# Quick memory count
+memoclaw count
+memoclaw count --namespace project-alpha
+
+# Interactive memory browser (REPL)
+memoclaw browse
+
+# Import memories from JSON export
+memoclaw import memories.json
+
+# Show/validate config
+memoclaw config show
+memoclaw config check
+
+# Shell completions
+memoclaw completions bash >> ~/.bashrc
+memoclaw completions zsh >> ~/.zshrc
 ```
 
 **Setup:**
@@ -405,7 +439,8 @@ Request:
   "importance": 0.8,
   "namespace": "project-alpha",
   "memory_type": "preference",
-  "expires_at": "2026-06-01T00:00:00Z"
+  "expires_at": "2026-06-01T00:00:00Z",
+  "immutable": false
 }
 ```
 
@@ -428,6 +463,7 @@ Fields:
 - `agent_id`: Agent identifier for multi-agent scoping
 - `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
 - `pinned`: Boolean — pinned memories are exempt from decay (default: false)
+- `immutable`: Boolean — immutable memories cannot be updated or deleted (default: false)
 
 ### Store batch
 
@@ -559,6 +595,7 @@ Fields (all optional, at least one required):
 - `namespace`: Move to a different namespace
 - `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
 - `pinned`: Boolean — pinned memories are exempt from decay
+- `immutable`: Boolean — lock memory from further updates or deletion
 
 ### Get single memory
 
@@ -949,6 +986,34 @@ Response:
 
 CLI: `memoclaw namespaces`
 
+### Core memories
+
+```
+GET /v1/core-memories?limit=10&namespace=default
+```
+
+Returns the most important, frequently accessed, and pinned memories — the "core" of your memory store. Free endpoint.
+
+Response:
+```json
+{
+  "memories": [
+    {
+      "id": "uuid",
+      "content": "User's name is Ana",
+      "importance": 0.95,
+      "pinned": true,
+      "access_count": 42,
+      "memory_type": "preference",
+      "namespace": "default"
+    }
+  ],
+  "total": 5
+}
+```
+
+CLI: `memoclaw list --sort importance --limit 10` (approximate equivalent)
+
 ### Usage stats
 
 ```
@@ -958,6 +1023,43 @@ GET /v1/stats
 Aggregate statistics: total memories, pinned count, never-accessed count, average importance, breakdowns by type and namespace.
 
 CLI: `memoclaw stats`
+
+### Count memories
+
+```
+GET /v1/memories/count?namespace=default
+```
+
+Quick count of memories, optionally filtered by namespace.
+
+Response:
+```json
+{
+  "count": 42
+}
+```
+
+CLI: `memoclaw count` or `memoclaw count --namespace project-alpha`
+
+### Import memories
+
+```
+POST /v1/import
+```
+
+Import memories from a JSON export (produced by `memoclaw export --format json`). Free.
+
+Request: JSON array of memory objects (same format as export output).
+
+Response:
+```json
+{
+  "imported": 15,
+  "skipped": 2
+}
+```
+
+CLI: `memoclaw import memories.json`
 
 ### Migrate markdown files
 
@@ -1024,8 +1126,10 @@ Error codes:
 Typical flow for an OpenClaw agent using MemoClaw via CLI:
 
 ```bash
-# Session start — load context
+# Session start — load context (pick one)
 memoclaw context "user preferences and recent decisions" --max-memories 10
+# or free alternative for essentials:
+memoclaw core-memories --limit 5
 
 # User says "I switched to Neovim last week"
 memoclaw recall "editor preferences"         # check existing
@@ -1037,7 +1141,7 @@ memoclaw recall "database decision" --namespace project-alpha
 
 # Session end — summarize
 memoclaw store "Session 2026-02-16: Discussed editor migration to Neovim, reviewed DB schema" \
-  --importance 0.6 --tags session-summary
+  --importance 0.6 --tags session-summary --memory-type observation
 
 # Periodic maintenance
 memoclaw consolidate --namespace default --dry-run
@@ -1136,10 +1240,57 @@ When multiple agents share the same wallet but need isolation:
 ```bash
 # Agent 1 stores in its own scope
 memoclaw store "User prefers concise answers" \
-  --agent-id agent-main --session-id session-abc
+  --importance 0.8 --memory-type preference --agent-id agent-main --session-id session-abc
 
 # Agent 2 can query across all agents or filter
 memoclaw recall "user communication style" --agent-id agent-main
 ```
 
 Use `agent_id` for per-agent isolation and `session_id` for per-conversation scoping. Namespaces are for logical domains (projects), not agents.
+
+---
+
+## Troubleshooting
+
+Common issues and how to fix them:
+
+```
+Command not found: memoclaw
+→ npm install -g memoclaw
+
+"Missing wallet configuration" or auth errors
+→ Run memoclaw init (interactive setup, saves to ~/.memoclaw/config.json)
+→ Or set MEMOCLAW_PRIVATE_KEY environment variable
+
+402 Payment Required but free tier should have calls left
+→ memoclaw status — check free_calls_remaining
+→ If 0: fund wallet with USDC on Base network
+
+"ECONNREFUSED" or network errors
+→ API might be down. Fall back to local files temporarily.
+→ Check https://api.memoclaw.com/v1/free-tier/status with curl
+
+Recall returns no results for something you stored
+→ Check namespace — recall defaults to "default"
+→ Try memoclaw search "keyword" for free text search
+→ Lower min_similarity if results are borderline
+
+Duplicate memories piling up
+→ Always recall before storing to check for existing
+→ Run memoclaw consolidate --namespace default --dry-run to preview merges
+→ Then memoclaw consolidate --namespace default to merge
+
+"Immutable memory cannot be updated"
+→ Memory was stored with immutable: true — it cannot be changed or deleted by design
+```
+
+### Quick health check
+
+Run this sequence to verify everything works:
+
+```bash
+memoclaw config check    # Wallet configured?
+memoclaw status          # Free tier remaining?
+memoclaw count           # How many memories stored?
+memoclaw stats           # Overall health
+```
