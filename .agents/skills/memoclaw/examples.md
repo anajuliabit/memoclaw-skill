@@ -141,54 +141,62 @@ memoclaw update <id> --pinned true
 
 Run both systems in parallel for a week before phasing out local files.
 
-## Example 8: JavaScript SDK
+## Example 8: Interactive browse session
 
-```javascript
-import { x402Fetch } from '@x402/fetch';
+Use the built-in REPL to explore and manage memories interactively.
 
-// Store a preference
-await x402Fetch('POST', 'https://api.memoclaw.com/v1/store', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    content: "Ana prefers coffee without sugar, always in the morning",
-    metadata: { tags: ["preferences", "food"] },
-    importance: 0.8
-  }
-});
+```bash
+# Launch interactive browser
+memoclaw browse
 
-// Recall it later
-const result = await x402Fetch('POST', 'https://api.memoclaw.com/v1/recall', {
-  wallet: process.env.MEMOCLAW_PRIVATE_KEY,
-  body: {
-    query: "how does Ana like her coffee?",
-    limit: 3
-  }
-});
+# Inside the REPL you can:
+# - Search and recall memories
+# - View details, update importance, pin/unpin
+# - Delete or relate memories
+# - Navigate namespaces
 ```
 
-## Example 9: Python SDK
+## Example 9: Multi-agent namespace patterns
 
-```python
-from memoclaw import MemoClawClient
+When multiple agents share a wallet but need isolation:
 
-async with MemoClawClient(private_key="0xYourKey") as client:
-    result = await client.store(
-        content="User prefers async/await over callbacks",
-        importance=0.8,
-        tags=["preferences", "code-style"],
-        memory_type="preference",
-    )
+```bash
+# Agent A stores project context
+memoclaw store "API uses REST with JSON:API spec" \
+  --importance 0.85 --namespace project-backend --memory-type decision \
+  --tags architecture,api
 
-    memories = await client.recall(
-        query="coding style preferences",
-        limit=5,
-        min_similarity=0.6,
-    )
-    for m in memories:
-        print(f"[{m.similarity:.2f}] {m.content}")
+# Agent B stores frontend decisions separately
+memoclaw store "Using React 19 with Server Components" \
+  --importance 0.85 --namespace project-frontend --memory-type decision \
+  --tags architecture,frontend
+
+# Either agent can cross-query when needed
+memoclaw recall "what tech stack are we using?" --namespace project-backend
+memoclaw recall "frontend framework" --namespace project-frontend
+
+# List all namespaces to see the full picture
+memoclaw namespaces
 ```
 
-Install: `pip install memoclaw`
+## Example 10: Automated session summarization
+
+Store structured session summaries for continuity across sessions.
+
+```bash
+# At session end, store a structured summary
+memoclaw store "Session 2026-02-28: Refactored auth module to use JWT. \
+Decided to drop session cookies. User wants migration script by Friday. \
+Open question: Redis vs Postgres for token blacklist." \
+  --importance 0.7 --tags session-summary --memory-type observation \
+  --namespace project-backend
+
+# Next session start — recall recent summaries
+memoclaw recall "recent session summaries and open questions" --limit 5
+
+# Periodically consolidate session summaries to avoid fragmentation
+memoclaw consolidate --namespace project-backend --dry-run
+```
 
 ## Cost breakdown
 

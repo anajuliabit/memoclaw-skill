@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.15.2
+version: 1.16.2
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -34,6 +34,25 @@ Before using any MemoClaw command, ensure setup is complete:
 3. **Free tier remaining?** → `memoclaw status` — if 0: fund wallet with USDC on Base
 
 If `memoclaw init` has never been run, **all commands will fail**. Run it first — it's interactive and takes 30 seconds.
+
+---
+
+## Quick reference
+
+**Essential commands:**
+```bash
+memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save
+memoclaw recall "query"                    # semantic search ($0.005)
+memoclaw search "keyword"                  # text search (free)
+memoclaw context "what I need" --max-memories 10   # LLM-ready block ($0.01)
+memoclaw core-memories --limit 5           # top memories (free)
+```
+
+**Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
+
+**Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
+
+**Free commands:** list, get, delete, search, core-memories, suggested, relations, history, export, namespaces, stats, count
 
 ---
 
