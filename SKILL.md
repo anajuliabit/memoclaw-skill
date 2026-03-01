@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.17.0
+version: 1.17.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -45,14 +45,14 @@ memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   #
 memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --max-memories 10   # LLM-ready block ($0.01)
-memoclaw core-memories --limit 5           # top memories (free)
+memoclaw list --sort-by importance --limit 5 # top memories (free)
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, search, core-memories, suggested, relations, history, export, namespaces, stats, count
+**Free commands:** list, get, delete, search, suggested, relations, history, export, namespace list, stats, count
 
 ---
 
@@ -164,7 +164,7 @@ Use these to assign importance consistently:
 #### Session start
 1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Quick essentials** (free): `memoclaw core-memories --limit 5` — returns your highest-importance, most-accessed, and pinned memories without using embeddings
+2. **Quick essentials** (free): `memoclaw list --sort-by importance --limit 5` — returns your highest-importance memories without using embeddings
 3. Use this context to personalize your responses
 
 #### During session
@@ -349,14 +349,14 @@ memoclaw context "user preferences and recent decisions" --max-memories 10
 memoclaw search "PostgreSQL" --namespace project-alpha
 
 # Core memories (free — highest importance, most accessed, pinned)
-memoclaw core-memories --limit 10
-memoclaw core-memories --namespace project-alpha
+memoclaw list --sort-by importance --limit 10
+memoclaw list --sort-by importance --namespace project-alpha --limit 10
 
 # Export memories
 memoclaw export --format markdown --namespace default
 
 # List namespaces with memory counts
-memoclaw namespaces
+memoclaw namespace list
 
 # Usage statistics
 memoclaw stats
@@ -427,7 +427,7 @@ The CLI handles both automatically. Just set your private key and go.
 | Context | $0.01 |
 | Migrate (per request) | $0.01 |
 
-**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Core memories, Relations, History, Export, Namespaces, Stats
+**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Relations, History, Export, Namespace, Stats, Count
 
 ## Setup
 
