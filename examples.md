@@ -73,7 +73,7 @@ memoclaw store "Team chose PostgreSQL over MongoDB for ACID requirements" \
 memoclaw recall "what database did we choose?" --namespace project-alpha
 
 # List all namespaces
-memoclaw namespaces
+memoclaw namespace list
 
 # Export a project's memories
 memoclaw export --format markdown --namespace project-alpha
@@ -176,7 +176,7 @@ memoclaw recall "what tech stack are we using?" --namespace project-backend
 memoclaw recall "frontend framework" --namespace project-frontend
 
 # List all namespaces to see the full picture
-memoclaw namespaces
+memoclaw namespace list
 ```
 
 ## Example 10: Automated session summarization
