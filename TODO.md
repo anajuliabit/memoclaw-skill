@@ -12,5 +12,5 @@ Moved full HTTP endpoint docs to `api-reference.md`. SKILL.md reduced from 35KB 
 ## ~~4. Document undocumented store flags~~ ✅
 Added `--batch`, `--immutable`, `--pinned`, `--expires-at` to quick reference and CLI usage. Added `--min-similarity` to recall quick reference.
 
-## 5. Verify memory_type values against CLI
-CLI help mentions `core, episodic, semantic` as memory type examples, but SKILL.md documents `correction, preference, decision, project, observation, general`. Need to verify which set the API actually accepts and reconcile. (Note: Linear issue creation blocked by workspace limit.)
+## ~~5. Verify memory_type values against CLI~~ ✅
+CLI `--help` shows `core, episodic, semantic` as generic examples, but the API accepts the 6 documented types with decay: `correction` (180d), `preference` (180d), `decision` (90d), `project` (30d), `observation` (14d), `general` (60d). The field is free-text so any string works, but these 6 have server-side decay behavior. SKILL.md was already correct; added inline type list to quick reference for clarity.
