@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.18.1
+version: 1.19.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -344,6 +344,8 @@ memoclaw bulk-delete uuid1 uuid2 uuid3
 
 # Delete all memories in a namespace
 memoclaw purge --namespace old-project
+# ⚠️ Without --namespace, purge deletes ALL memories! Always scope it.
+# memoclaw purge --force  ← DANGEROUS: wipes everything
 
 # Manage relations
 memoclaw relations list <memory-id>
@@ -394,6 +396,36 @@ memoclaw completions bash >> ~/.bashrc
 memoclaw completions zsh >> ~/.zshrc
 ```
 
+**Global flags (work with any command):**
+```bash
+-j, --json              # Machine-readable JSON output (best for agent piping)
+-O, --output <file>     # Write output to file instead of stdout
+-F, --field <name>      # Extract a specific field from output
+-k, --columns <cols>    # Select columns: id,content,importance,tags,created
+--raw                   # Content-only output (ideal for piping to other tools)
+--wide                  # Wider columns in table output
+-r, --reverse           # Reverse sort order
+-m, --sort-by <field>   # Sort by: id, importance, created, updated
+-w, --watch             # Continuous polling for changes
+--watch-interval <ms>   # Polling interval for watch mode (default: 5000)
+-s, --truncate <n>      # Truncate output to n characters
+--no-truncate           # Disable truncation
+-c, --concurrency <n>   # Parallel imports (default: 1)
+-y, --yes               # Skip confirmation prompts (alias for --force)
+-T, --timeout <sec>     # Request timeout (default: 30)
+-p, --pretty            # Pretty-print JSON output
+-q, --quiet             # Suppress non-essential output
+```
+
+**Agent-friendly patterns:**
+```bash
+memoclaw recall "query" --json | jq '.memories[0].content'   # parse with jq
+memoclaw list --raw --limit 5                                 # pipe content only
+memoclaw list --field importance --limit 1                    # extract single field
+memoclaw export --output backup.json                          # save to file
+memoclaw list --sort-by importance --reverse --limit 5        # lowest importance first
+```
+
 **Setup:**
 ```bash
 npm install -g memoclaw
@@ -404,6 +436,9 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 
 **Environment variables:**
 - `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required, or use `memoclaw init`)
+- `MEMOCLAW_URL` — Custom API endpoint (default: `https://api.memoclaw.com`)
+- `NO_COLOR` — Disable colored output (useful in CI/logs)
+- `DEBUG` — Enable debug logging for troubleshooting
 
 **Free tier:** First 100 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
