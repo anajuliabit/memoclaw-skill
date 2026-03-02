@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.17.1
+version: 1.18.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -41,8 +41,11 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 
 **Essential commands:**
 ```bash
-memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save
+memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)
+echo -e "fact1\nfact2" | memoclaw store --batch       # batch from stdin ($0.04)
+memoclaw store "fact" --pinned --immutable             # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
+memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --max-memories 10   # LLM-ready block ($0.01)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
@@ -292,6 +295,14 @@ memoclaw status
 
 # Store a memory
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
+
+# Store with additional flags
+memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned
+memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z
+
+# Batch store from stdin (one per line or JSON array)
+echo -e "fact one\nfact two" | memoclaw store --batch
+cat memories.json | memoclaw store --batch
 
 # Recall memories
 memoclaw recall "what theme does user prefer"
