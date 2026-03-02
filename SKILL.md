@@ -41,7 +41,7 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 
 **Essential commands:**
 ```bash
-memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)
+memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)  [types: correction|preference|decision|project|observation|general]
 echo -e "fact1\nfact2" | memoclaw store --batch       # batch from stdin ($0.04)
 memoclaw store "fact" --pinned --immutable             # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
