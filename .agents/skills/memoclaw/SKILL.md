@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.16.3
+version: 1.19.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -41,18 +41,21 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 
 **Essential commands:**
 ```bash
-memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save
+memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)  [types: correction|preference|decision|project|observation|general]
+echo -e "fact1\nfact2" | memoclaw store --batch       # batch from stdin ($0.04)
+memoclaw store "fact" --pinned --immutable             # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
+memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --max-memories 10   # LLM-ready block ($0.01)
-memoclaw core-memories --limit 5           # top memories (free)
+memoclaw list --sort-by importance --limit 5 # top memories (free)
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, search, core-memories, suggested, relations, history, export, namespaces, stats, count
+**Free commands:** list, get, delete, search, suggested, relations, history, export, namespace list, stats, count
 
 ---
 
@@ -164,7 +167,7 @@ Use these to assign importance consistently:
 #### Session start
 1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Quick essentials** (free): `memoclaw core-memories --limit 5` — returns your highest-importance, most-accessed, and pinned memories without using embeddings
+2. **Quick essentials** (free): `memoclaw list --sort-by importance --limit 5` — returns your highest-importance memories without using embeddings
 3. Use this context to personalize your responses
 
 #### During session
@@ -246,17 +249,19 @@ Use namespaces to organize memories:
 
 ### Anti-patterns
 
-❌ **Store-everything syndrome** — Don't store every sentence. Be selective.
-❌ **Recall-on-every-turn** — Don't recall before every response. Only when relevant.
-❌ **Ignoring duplicates** — Always recall before storing to check for existing memories.
-❌ **Vague content** — "User likes editors" is useless. Be specific: "User prefers VSCode with vim bindings."
-❌ **Storing secrets** — Never store passwords, API keys, or tokens. No exceptions.
-❌ **Namespace sprawl** — Don't create a new namespace for every conversation. Use `default` + project namespaces.
-❌ **Skipping importance** — Leaving importance at default 0.5 for everything defeats ranking.
-❌ **Forgetting memory_type** — Always set it. Decay half-lives depend on it.
-❌ **Never consolidating** — Over time, memories become fragmented. Run consolidate periodically.
-❌ **Ignoring decay** — Memories naturally decay. Review stale memories regularly.
-❌ **Single namespace for everything** — Use namespaces to isolate different contexts.
+Things that waste calls or degrade recall quality:
+
+- **Store-everything syndrome** — Don't store every sentence. Be selective.
+- **Recall-on-every-turn** — Only recall when the conversation actually needs past context.
+- **Ignoring duplicates** — Recall before storing to check for existing memories.
+- **Vague content** — "User likes editors" is useless. "User prefers VSCode with vim bindings" is searchable.
+- **Storing secrets** — Never store passwords, API keys, or tokens. No exceptions.
+- **Namespace sprawl** — Stick to `default` + project namespaces. One per conversation is overkill.
+- **Skipping importance** — Leaving everything at default 0.5 defeats ranking entirely.
+- **Forgetting memory_type** — Always set it. Decay half-lives depend on the type.
+- **Never consolidating** — Memories fragment over time. Run consolidate periodically.
+- **Ignoring decay** — Memories decay naturally. Review stale ones with `memoclaw suggested --category stale`.
+- **Single namespace for everything** — Use namespaces to keep different contexts separate.
 
 ### Example flow
 
@@ -292,6 +297,14 @@ memoclaw status
 
 # Store a memory
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
+
+# Store with additional flags
+memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned
+memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z
+
+# Batch store from stdin (one per line or JSON array)
+echo -e "fact one\nfact two" | memoclaw store --batch
+cat memories.json | memoclaw store --batch
 
 # Recall memories
 memoclaw recall "what theme does user prefer"
@@ -333,6 +346,8 @@ memoclaw bulk-delete uuid1 uuid2 uuid3
 
 # Delete all memories in a namespace
 memoclaw purge --namespace old-project
+# ⚠️ Without --namespace, purge deletes ALL memories! Always scope it.
+# memoclaw purge --force  ← DANGEROUS: wipes everything
 
 # Manage relations
 memoclaw relations list <memory-id>
@@ -349,14 +364,14 @@ memoclaw context "user preferences and recent decisions" --max-memories 10
 memoclaw search "PostgreSQL" --namespace project-alpha
 
 # Core memories (free — highest importance, most accessed, pinned)
-memoclaw core-memories --limit 10
-memoclaw core-memories --namespace project-alpha
+memoclaw list --sort-by importance --limit 10
+memoclaw list --sort-by importance --namespace project-alpha --limit 10
 
 # Export memories
 memoclaw export --format markdown --namespace default
 
 # List namespaces with memory counts
-memoclaw namespaces
+memoclaw namespace list
 
 # Usage statistics
 memoclaw stats
@@ -383,6 +398,36 @@ memoclaw completions bash >> ~/.bashrc
 memoclaw completions zsh >> ~/.zshrc
 ```
 
+**Global flags (work with any command):**
+```bash
+-j, --json              # Machine-readable JSON output (best for agent piping)
+-O, --output <file>     # Write output to file instead of stdout
+-F, --field <name>      # Extract a specific field from output
+-k, --columns <cols>    # Select columns: id,content,importance,tags,created
+--raw                   # Content-only output (ideal for piping to other tools)
+--wide                  # Wider columns in table output
+-r, --reverse           # Reverse sort order
+-m, --sort-by <field>   # Sort by: id, importance, created, updated
+-w, --watch             # Continuous polling for changes
+--watch-interval <ms>   # Polling interval for watch mode (default: 5000)
+-s, --truncate <n>      # Truncate output to n characters
+--no-truncate           # Disable truncation
+-c, --concurrency <n>   # Parallel imports (default: 1)
+-y, --yes               # Skip confirmation prompts (alias for --force)
+-T, --timeout <sec>     # Request timeout (default: 30)
+-p, --pretty            # Pretty-print JSON output
+-q, --quiet             # Suppress non-essential output
+```
+
+**Agent-friendly patterns:**
+```bash
+memoclaw recall "query" --json | jq '.memories[0].content'   # parse with jq
+memoclaw list --raw --limit 5                                 # pipe content only
+memoclaw list --field importance --limit 1                    # extract single field
+memoclaw export --output backup.json                          # save to file
+memoclaw list --sort-by importance --reverse --limit 5        # lowest importance first
+```
+
 **Setup:**
 ```bash
 npm install -g memoclaw
@@ -393,6 +438,9 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 
 **Environment variables:**
 - `MEMOCLAW_PRIVATE_KEY` — Your wallet private key for auth (required, or use `memoclaw init`)
+- `MEMOCLAW_URL` — Custom API endpoint (default: `https://api.memoclaw.com`)
+- `NO_COLOR` — Disable colored output (useful in CI/logs)
+- `DEBUG` — Enable debug logging for troubleshooting
 
 **Free tier:** First 100 calls are free. The CLI automatically handles wallet signature auth and falls back to x402 payment when free tier is exhausted.
 
@@ -400,14 +448,12 @@ export MEMOCLAW_PRIVATE_KEY=0xYourPrivateKey
 
 ## How it works
 
-MemoClaw uses wallet-based identity. Your wallet address is your user ID.
+Your wallet address is your user ID — no accounts, no API keys. Auth works two ways:
 
-**Two auth methods:**
+1. **Free tier** — Sign a message with your wallet. 100 calls, no payment needed.
+2. **x402 payment** — After free tier, each call includes a USDC micropayment on Base.
 
-1. **Free Tier (default)** — Sign a message with your wallet, get 100 free calls
-2. **x402 Payment** — Pay per call with USDC on Base (kicks in after free tier)
-
-The CLI handles both automatically. Just set your private key and go.
+The CLI handles both automatically.
 
 ## Pricing
 
@@ -427,668 +473,19 @@ The CLI handles both automatically. Just set your private key and go.
 | Context | $0.01 |
 | Migrate (per request) | $0.01 |
 
-**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Core memories, Relations, History, Export, Namespaces, Stats
+**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Relations, History, Export, Namespace, Stats, Count
 
 ## Setup
 
-```bash
-npm install -g memoclaw
-memoclaw init    # Interactive setup — saves to ~/.memoclaw/config.json
-memoclaw status  # Check your free tier remaining
-```
-
-That's it. `memoclaw init` walks you through wallet setup and saves config locally. The CLI handles wallet signature auth automatically. When free tier runs out, it falls back to x402 payment (requires USDC on Base).
+See the prerequisites checklist at the top and the CLI usage section for `memoclaw init`.
 
 **Docs:** https://docs.memoclaw.com
-**MCP Server:** `npm install -g memoclaw-mcp` (for tool-based access from MCP-compatible clients)
+**MCP Server:** `npm install -g memoclaw-mcp` (tool-based access from MCP-compatible clients)
 
 ## API reference
 
-### Store a memory
-
-```
-POST /v1/store
-```
-
-Request:
-```json
-{
-  "content": "User prefers dark mode and minimal notifications",
-  "metadata": {"tags": ["preferences", "ui"]},
-  "importance": 0.8,
-  "namespace": "project-alpha",
-  "memory_type": "preference",
-  "expires_at": "2026-06-01T00:00:00Z",
-  "immutable": false
-}
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "stored": true,
-  "tokens_used": 15
-}
-```
-
-Fields:
-- `content` (required): The memory text, max 8192 characters
-- `metadata.tags`: Array of strings for filtering, max 10 tags
-- `importance`: Float 0-1, affects ranking in recall (default: 0.5)
-- `namespace`: Isolate memories per project/context (default: "default")
-- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"` — each type has different decay half-lives (correction: 180d, preference: 180d, decision: 90d, project: 30d, observation: 14d, general: 60d)
-- `session_id`: Session identifier for multi-agent scoping
-- `agent_id`: Agent identifier for multi-agent scoping
-- `expires_at`: ISO 8601 date string — memory auto-expires after this time (must be in the future)
-- `pinned`: Boolean — pinned memories are exempt from decay (default: false)
-- `immutable`: Boolean — immutable memories cannot be updated or deleted (default: false)
-
-### Store batch
-
-```
-POST /v1/store/batch
-```
-
-Request:
-```json
-{
-  "memories": [
-    {"content": "User uses VSCode with vim bindings", "metadata": {"tags": ["tools"]}},
-    {"content": "User prefers TypeScript over JavaScript", "importance": 0.9}
-  ]
-}
-```
-
-Response:
-```json
-{
-  "ids": ["uuid1", "uuid2"],
-  "stored": true,
-  "count": 2,
-  "tokens_used": 28
-}
-```
-
-Max 100 memories per batch.
-
-### Recall memories
-
-Semantic search across your memories.
-
-```
-POST /v1/recall
-```
-
-Request:
-```json
-{
-  "query": "what are the user's editor preferences?",
-  "limit": 5,
-  "min_similarity": 0.7,
-  "namespace": "project-alpha",
-  "filters": {
-    "tags": ["preferences"],
-    "after": "2025-01-01",
-    "memory_type": "preference"
-  }
-}
-```
-
-Response:
-```json
-{
-  "memories": [
-    {
-      "id": "uuid",
-      "content": "User uses VSCode with vim bindings",
-      "metadata": {"tags": ["tools"]},
-      "importance": 0.8,
-      "similarity": 0.89,
-      "created_at": "2025-01-15T10:30:00Z"
-    }
-  ],
-  "query_tokens": 8
-}
-```
-
-Fields:
-- `query` (required): Natural language query
-- `limit`: Max results (default: 10)
-- `min_similarity`: Threshold 0-1 (default: 0.5)
-- `namespace`: Filter by namespace
-- `filters.tags`: Match any of these tags
-- `filters.after`: Only memories after this date
-- `filters.memory_type`: Filter by type (`correction`, `preference`, `decision`, `project`, `observation`, `general`)
-- `include_relations`: Boolean — include related memories in results
-
-### List memories
-
-```
-GET /v1/memories?limit=20&offset=0&namespace=project-alpha
-```
-
-Response:
-```json
-{
-  "memories": [...],
-  "total": 45,
-  "limit": 20,
-  "offset": 0
-}
-```
-
-### Update memory
-
-```
-PATCH /v1/memories/{id}
-```
-
-Update one or more fields on an existing memory. If `content` changes, embedding and full-text search vector are regenerated.
-
-Request:
-```json
-{
-  "content": "User prefers 2-space indentation (not tabs)",
-  "importance": 0.95,
-  "expires_at": "2026-06-01T00:00:00Z"
-}
-```
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "content": "User prefers 2-space indentation (not tabs)",
-  "importance": 0.95,
-  "expires_at": "2026-06-01T00:00:00Z",
-  "updated_at": "2026-02-11T15:30:00Z"
-}
-```
-
-Fields (all optional, at least one required):
-- `content`: New memory text, max 8192 characters (triggers re-embedding)
-- `metadata`: Replace metadata entirely (same validation as store)
-- `importance`: Float 0-1
-- `memory_type`: `"correction"|"preference"|"decision"|"project"|"observation"|"general"`
-- `namespace`: Move to a different namespace
-- `expires_at`: ISO 8601 date (must be future) or `null` to clear expiration
-- `pinned`: Boolean — pinned memories are exempt from decay
-- `immutable`: Boolean — lock memory from further updates or deletion
-
-### Get single memory
-
-```
-GET /v1/memories/{id}
-```
-
-Returns full memory with metadata, relations, and current importance.
-
-Response:
-```json
-{
-  "id": "550e8400-e29b-41d4-a716-446655440000",
-  "content": "User prefers dark mode",
-  "metadata": {"tags": ["preferences", "ui"]},
-  "importance": 0.8,
-  "memory_type": "preference",
-  "namespace": "default",
-  "pinned": false,
-  "created_at": "2025-01-15T10:30:00Z",
-  "updated_at": "2025-01-15T10:30:00Z"
-}
-```
-
-CLI: `memoclaw get <uuid>`
-
-### Delete memory
-
-```
-DELETE /v1/memories/{id}
-```
-
-Response:
-```json
-{
-  "deleted": true,
-  "id": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
-
-### Bulk delete
-
-```
-POST /v1/memories/bulk-delete
-```
-
-Delete multiple memories at once. Free.
-
-Request:
-```json
-{
-  "ids": ["uuid1", "uuid2", "uuid3"]
-}
-```
-
-Response:
-```json
-{
-  "deleted": 3
-}
-```
-
-CLI: `memoclaw purge --namespace old-project` (deletes all in namespace)
-
-### Batch update
-
-```
-PATCH /v1/memories/batch
-```
-
-Update multiple memories in one request. Charged $0.005 per request (not per memory) if any content changes trigger re-embedding.
-
-Request:
-```json
-{
-  "updates": [
-    {"id": "uuid1", "importance": 0.9, "pinned": true},
-    {"id": "uuid2", "content": "Updated fact", "importance": 0.8}
-  ]
-}
-```
-
-Response:
-```json
-{
-  "updated": 2,
-  "memories": [...]
-}
-```
-
-### Ingest
-
-```
-POST /v1/ingest
-```
-
-Dump a conversation or raw text, get extracted facts, dedup, and auto-relations.
-
-Request:
-```json
-{
-  "messages": [{"role": "user", "content": "I prefer dark mode"}],
-  "text": "or raw text instead of messages",
-  "namespace": "default",
-  "session_id": "session-123",
-  "agent_id": "agent-1",
-  "auto_relate": true
-}
-```
-
-Response:
-```json
-{
-  "memory_ids": ["uuid1", "uuid2"],
-  "facts_extracted": 3,
-  "facts_stored": 2,
-  "facts_deduplicated": 1,
-  "relations_created": 1,
-  "tokens_used": 150
-}
-```
-
-Fields:
-- `messages`: Array of `{role, content}` conversation messages (optional if `text` provided)
-- `text`: Raw text to extract facts from (optional if `messages` provided)
-- `namespace`: Namespace for stored memories (default: "default")
-- `session_id`: Session identifier for multi-agent scoping
-- `agent_id`: Agent identifier for multi-agent scoping
-- `auto_relate`: Automatically create relations between extracted facts (default: false)
-
-### Extract facts
-
-```
-POST /v1/memories/extract
-```
-
-Extract facts from conversation messages via LLM.
-
-Request:
-```json
-{
-  "messages": [
-    {"role": "user", "content": "My timezone is PST and I use vim"},
-    {"role": "assistant", "content": "Got it!"}
-  ],
-  "namespace": "default",
-  "session_id": "session-123",
-  "agent_id": "agent-1"
-}
-```
-
-Response:
-```json
-{
-  "memory_ids": ["uuid1", "uuid2"],
-  "facts_extracted": 2,
-  "facts_stored": 2,
-  "facts_deduplicated": 0,
-  "tokens_used": 120
-}
-```
-
-### Consolidate
-
-```
-POST /v1/memories/consolidate
-```
-
-Find and merge duplicate/similar memories.
-
-Request:
-```json
-{
-  "namespace": "default",
-  "min_similarity": 0.85,
-  "mode": "rule",
-  "dry_run": false
-}
-```
-
-Response:
-```json
-{
-  "clusters_found": 3,
-  "memories_merged": 5,
-  "memories_created": 3,
-  "clusters": [
-    {"memory_ids": ["uuid1", "uuid2"], "similarity": 0.92, "merged_into": "uuid3"}
-  ]
-}
-```
-
-Fields:
-- `namespace`: Limit consolidation to a namespace
-- `min_similarity`: Minimum similarity threshold to consider merging (default: 0.85)
-- `mode`: `"rule"` (fast, pattern-based) or `"llm"` (smarter, uses LLM to merge)
-- `dry_run`: Preview clusters without merging (default: false)
-
-### Suggested
-
-```
-GET /v1/suggested?limit=5&namespace=default&category=stale
-```
-
-Get memories you should review: stale important, fresh unreviewed, hot, decaying.
-
-Query params:
-- `limit`: Max results (default: 10)
-- `namespace`: Filter by namespace
-- `session_id`: Filter by session
-- `agent_id`: Filter by agent
-- `category`: `"stale"|"fresh"|"hot"|"decaying"`
-
-Response:
-```json
-{
-  "suggested": [...],
-  "categories": {"stale": 3, "fresh": 2, "hot": 5, "decaying": 1},
-  "total": 11
-}
-```
-
-### Memory relations
-
-Create, list, and delete relationships between memories.
-
-**Create relationship:**
-```
-POST /v1/memories/:id/relations
-```
-```json
-{
-  "target_id": "uuid-of-related-memory",
-  "relation_type": "related_to",
-  "metadata": {}
-}
-```
-
-Relation types: `"related_to"|"derived_from"|"contradicts"|"supersedes"|"supports"`
-
-**List relationships:**
-```
-GET /v1/memories/:id/relations
-```
-
-**Delete relationship:**
-```
-DELETE /v1/memories/:id/relations/:relationId
-```
-
-### Assemble context
-
-```
-POST /v1/context
-```
-
-Build a ready-to-use context block from your memories for LLM prompts.
-
-Request:
-```json
-{
-  "query": "user preferences and project context",
-  "namespace": "default",
-  "max_memories": 5,
-  "max_tokens": 2000,
-  "format": "text",
-  "include_metadata": false,
-  "summarize": false
-}
-```
-
-Response:
-```json
-{
-  "context": "The user prefers dark mode...",
-  "memories_used": 5,
-  "tokens": 450
-}
-```
-
-Fields:
-- `query` (required): Natural language description of what context you need
-- `namespace`: Filter by namespace
-- `max_memories`: Max memories to include (default: 10, max: 100)
-- `max_tokens`: Target token limit for output (default: 4000, range: 100-16000)
-- `format`: `"text"` (plain) or `"structured"` (JSON with metadata)
-- `include_metadata`: Include tags, importance, type in output (default: false)
-- `summarize`: Use LLM to merge similar memories in output (default: false)
-
-CLI: `memoclaw context "user preferences and project context" --max-memories 5`
-
-### Search (full-text)
-
-```
-POST /v1/search
-```
-
-Keyword search using BM25 ranking. Free alternative to semantic recall when you know the exact terms.
-
-Request:
-```json
-{
-  "query": "PostgreSQL migration",
-  "limit": 10,
-  "namespace": "project-alpha",
-  "memory_type": "decision",
-  "tags": ["architecture"]
-}
-```
-
-Response:
-```json
-{
-  "memories": [...],
-  "total": 3
-}
-```
-
-CLI: `memoclaw search "PostgreSQL migration" --namespace project-alpha`
-
-### Memory history
-
-```
-GET /v1/memories/{id}/history
-```
-
-Returns full change history for a memory (every update tracked).
-
-Response:
-```json
-{
-  "history": [
-    {
-      "id": "uuid",
-      "memory_id": "uuid",
-      "changes": {"importance": 0.95, "content": "updated text"},
-      "created_at": "2026-02-11T15:30:00Z"
-    }
-  ]
-}
-```
-
-### Memory graph
-
-```
-GET /v1/memories/{id}/graph?depth=2&limit=50
-```
-
-Traverse the knowledge graph of related memories up to N hops.
-
-Query params:
-- `depth`: Max hops (default: 2, max: 5)
-- `limit`: Max memories returned (default: 50, max: 200)
-- `relation_types`: Comma-separated filter (`related_to,supersedes,contradicts,supports,derived_from`)
-
-### Export memories
-
-```
-GET /v1/export?format=json&namespace=default
-```
-
-Export memories in `json`, `csv`, or `markdown` format.
-
-Query params:
-- `format`: `json`, `csv`, or `markdown` (default: json)
-- `namespace`, `memory_type`, `tags`, `before`, `after`: Filters
-
-CLI: `memoclaw export --format markdown --namespace default`
-
-### List namespaces
-
-```
-GET /v1/namespaces
-```
-
-Returns all namespaces with memory counts.
-
-Response:
-```json
-{
-  "namespaces": [
-    {"name": "default", "count": 42, "last_memory_at": "2026-02-16T10:00:00Z"},
-    {"name": "project-alpha", "count": 15, "last_memory_at": "2026-02-15T08:00:00Z"}
-  ],
-  "total": 2
-}
-```
-
-CLI: `memoclaw namespaces`
-
-### Core memories
-
-```
-GET /v1/core-memories?limit=10&namespace=default
-```
-
-Returns the most important, frequently accessed, and pinned memories — the "core" of your memory store. Free endpoint.
-
-Response:
-```json
-{
-  "memories": [
-    {
-      "id": "uuid",
-      "content": "User's name is Ana",
-      "importance": 0.95,
-      "pinned": true,
-      "access_count": 42,
-      "memory_type": "preference",
-      "namespace": "default"
-    }
-  ],
-  "total": 5
-}
-```
-
-CLI: `memoclaw list --sort importance --limit 10` (approximate equivalent)
-
-### Usage stats
-
-```
-GET /v1/stats
-```
-
-Aggregate statistics: total memories, pinned count, never-accessed count, average importance, breakdowns by type and namespace.
-
-CLI: `memoclaw stats`
-
-### Count memories
-
-```
-GET /v1/memories/count?namespace=default
-```
-
-Quick count of memories, optionally filtered by namespace.
-
-Response:
-```json
-{
-  "count": 42
-}
-```
-
-CLI: `memoclaw count` or `memoclaw count --namespace project-alpha`
-
-### Import memories
-
-```
-POST /v1/import
-```
-
-Import memories from a JSON export (produced by `memoclaw export --format json`). Free.
-
-Request: JSON array of memory objects (same format as export output).
-
-Response:
-```json
-{
-  "imported": 15,
-  "skipped": 2
-}
-```
-
-CLI: `memoclaw import memories.json`
-
-### Migrate markdown files
-
-```
-POST /v1/migrate
-```
-
-Import `.md` files. The API extracts facts, creates memories, and deduplicates.
-
-CLI: `memoclaw migrate ./memory/`
+> Full HTTP endpoint documentation is in [api-reference.md](api-reference.md).
+> Agents should prefer the CLI commands listed above. Refer to the API reference only when making direct HTTP calls.
 
 ---
 
@@ -1135,59 +532,14 @@ All errors follow this format:
 ```
 
 Error codes:
+- `UNAUTHORIZED` (401) — Missing or invalid wallet signature
 - `PAYMENT_REQUIRED` (402) — Missing or invalid x402 payment
-- `VALIDATION_ERROR` (422) — Invalid request body
 - `NOT_FOUND` (404) — Memory not found
+- `CONFLICT` (409) — Attempted to modify an immutable memory
+- `PAYLOAD_TOO_LARGE` (413) — Content exceeds 8192 character limit
+- `VALIDATION_ERROR` (422) — Invalid request body
+- `RATE_LIMITED` (429) — Too many requests, back off and retry
 - `INTERNAL_ERROR` (500) — Server error
-
-## Example: OpenClaw agent workflow
-
-Typical flow for an OpenClaw agent using MemoClaw via CLI:
-
-```bash
-# Session start — load context (pick one)
-memoclaw context "user preferences and recent decisions" --max-memories 10
-# or free alternative for essentials:
-memoclaw core-memories --limit 5
-
-# User says "I switched to Neovim last week"
-memoclaw recall "editor preferences"         # check existing
-memoclaw store "User switched to Neovim (Feb 2026)" \
-  --importance 0.85 --tags preferences,tools --memory-type preference
-
-# User asks "what did we decide about the database?"
-memoclaw recall "database decision" --namespace project-alpha
-
-# Session end — summarize
-memoclaw store "Session 2026-02-16: Discussed editor migration to Neovim, reviewed DB schema" \
-  --importance 0.6 --tags session-summary --memory-type observation
-
-# Periodic maintenance
-memoclaw consolidate --namespace default --dry-run
-memoclaw suggested --category stale --limit 5
-```
-
----
-
-## Status check
-
-```
-GET /v1/free-tier/status
-```
-
-Returns wallet info and free tier usage. No payment required.
-
-Response:
-```json
-{
-  "wallet": "0xYourAddress",
-  "free_calls_remaining": 73,
-  "free_calls_total": 100,
-  "plan": "free"
-}
-```
-
-CLI: `memoclaw status`
 
 ---
 
@@ -1197,9 +549,12 @@ When MemoClaw API calls fail, follow this strategy:
 
 ```
 API call failed?
+├─ 401 UNAUTHORIZED → Wallet key missing or invalid. Run `memoclaw config check`.
 ├─ 402 PAYMENT_REQUIRED
 │  ├─ Free tier? → Check MEMOCLAW_PRIVATE_KEY, run `memoclaw status`
 │  └─ Paid tier? → Check USDC balance on Base
+├─ 409 CONFLICT → Immutable memory — cannot update or delete. Store a new one instead.
+├─ 413 PAYLOAD_TOO_LARGE → Content exceeds 8192 chars. Split into smaller memories.
 ├─ 422 VALIDATION_ERROR → Fix request body (check field constraints above)
 ├─ 404 NOT_FOUND → Memory was deleted or never existed
 ├─ 429 RATE_LIMITED → Back off 2-5 seconds, retry once
