@@ -561,7 +561,7 @@ Response:
 }
 ```
 
-CLI: `memoclaw namespaces`
+CLI: `memoclaw namespace list`
 
 ### Core memories
 
