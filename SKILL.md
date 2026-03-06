@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.19.1
+version: 1.20.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -42,12 +42,13 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 **Essential commands:**
 ```bash
 memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)  [types: correction|preference|decision|project|observation|general]
+memoclaw store --file notes.txt --importance 0.7       # store from file ($0.005)
 echo -e "fact1\nfact2" | memoclaw store --batch       # batch from stdin ($0.04)
 memoclaw store "fact" --pinned --immutable             # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw search "keyword"                  # text search (free)
-memoclaw context "what I need" --max-memories 10   # LLM-ready block ($0.01)
+memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
 ```
 
@@ -165,7 +166,7 @@ Use these to assign importance consistently:
 ### Session lifecycle
 
 #### Session start
-1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --max-memories 10`
+1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --limit 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
 2. **Quick essentials** (free): `memoclaw list --sort-by importance --limit 5` — returns your highest-importance memories without using embeddings
 3. Use this context to personalize your responses
@@ -301,6 +302,8 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui -
 # Store with additional flags
 memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned
 memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z
+memoclaw store --file ./notes.txt --importance 0.7 --tags meeting  # read content from file
+memoclaw store "key fact" --id-only                                # print only the UUID (for scripting)
 
 # Batch store from stdin (one per line or JSON array)
 echo -e "fact one\nfact two" | memoclaw store --batch
@@ -325,6 +328,8 @@ memoclaw delete <uuid>
 
 # Ingest raw text (extract + dedup + relate)
 memoclaw ingest "raw text to extract facts from"
+memoclaw ingest --text "alternative flag form"
+memoclaw ingest --file meeting-notes.txt              # read from file
 
 # Extract facts from text
 memoclaw extract "User prefers dark mode. Timezone is PST."
@@ -358,7 +363,7 @@ memoclaw relations delete <memory-id> <relation-id>
 memoclaw graph <memory-id> --depth 2 --limit 50
 
 # Assemble context block for LLM prompts
-memoclaw context "user preferences and recent decisions" --max-memories 10
+memoclaw context "user preferences and recent decisions" --limit 10
 
 # Full-text keyword search (free, no embeddings)
 memoclaw search "PostgreSQL" --namespace project-alpha
@@ -372,6 +377,7 @@ memoclaw export --format markdown --namespace default
 
 # List namespaces with memory counts
 memoclaw namespace list
+memoclaw namespace stats           # detailed counts per namespace
 
 # Usage statistics
 memoclaw stats

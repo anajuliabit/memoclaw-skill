@@ -26,7 +26,7 @@ Typical flow for an OpenClaw agent using MemoClaw throughout a session:
 
 ```bash
 # Session start — load relevant context
-memoclaw context "user preferences and recent decisions" --max-memories 10
+memoclaw context "user preferences and recent decisions" --limit 10
 
 # User says "I switched to Neovim last week"
 memoclaw recall "editor preferences"         # check for existing memory
