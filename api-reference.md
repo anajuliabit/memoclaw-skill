@@ -462,7 +462,7 @@ Fields:
 - `include_metadata`: Include tags, importance, type in output (default: false)
 - `summarize`: Use LLM to merge similar memories in output (default: false)
 
-CLI: `memoclaw context "user preferences and project context" --max-memories 5`
+CLI: `memoclaw context "user preferences and project context" --limit 5`
 
 ### Search (full-text)
 
