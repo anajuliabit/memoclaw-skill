@@ -13,20 +13,23 @@ Or manually copy `SKILL.md` to your agent's skills directory.
 ## Quick Start
 
 ```bash
-# Set your private key
-export MEMOCLAW_PRIVATE_KEY=0x...
+# Setup (one-time, interactive — saves to ~/.memoclaw/config.json)
+npm install -g memoclaw
+memoclaw init
 
 # Store a memory
-memoclaw store "Meeting notes: discussed Q1 roadmap" --importance 0.8 --tags work
+memoclaw store "Meeting notes: discussed Q1 roadmap" \
+  --importance 0.8 --tags work --memory-type project
 
 # Recall memories
 memoclaw recall "what did we discuss about roadmap"
 
-# Session start - load context
-memoclaw recall "user preferences" --limit 5
+# Session start — load context
+memoclaw context "user preferences and recent decisions" --limit 10
 
-# Session end - store summary
-memoclaw store "Session 2026-02-13: Discussed project priorities" --importance 0.6 --tags session-summary
+# Session end — store summary
+memoclaw store "Session 2026-02-13: Discussed project priorities" \
+  --importance 0.6 --tags session-summary --memory-type observation
 ```
 
 ## Key Features
