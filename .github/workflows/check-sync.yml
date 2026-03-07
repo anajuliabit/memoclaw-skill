@@ -13,7 +13,9 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Check SKILL.md is in sync
-        run: diff SKILL.md .agents/skills/memoclaw/SKILL.md || { echo "::error::SKILL.md and .agents/skills/memoclaw/SKILL.md are out of sync. Run: cp SKILL.md .agents/skills/memoclaw/SKILL.md"; exit 1; }
+        run: |
+          diff SKILL.md .agents/skills/memoclaw/SKILL.md || { echo "::error::SKILL.md and .agents/skills/memoclaw/SKILL.md are out of sync. Run: cp SKILL.md .agents/skills/memoclaw/SKILL.md"; exit 1; }
 
       - name: Check examples.md is in sync
-        run: diff examples.md .agents/skills/memoclaw/examples.md || { echo "::error::examples.md and .agents/skills/memoclaw/examples.md are out of sync. Run: cp examples.md .agents/skills/memoclaw/examples.md"; exit 1; }
+        run: |
+          diff examples.md .agents/skills/memoclaw/examples.md || { echo "::error::examples.md and .agents/skills/memoclaw/examples.md are out of sync. Run: cp examples.md .agents/skills/memoclaw/examples.md"; exit 1; }
