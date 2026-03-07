@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.20.5
+version: 1.20.6
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -57,7 +57,7 @@ memoclaw list --sort-by importance --limit 5 # top memories (free)
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions
+**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions
 
 ---
 
@@ -323,6 +323,8 @@ memoclaw list --namespace default --limit 20
 
 # Update a memory in-place
 memoclaw update <uuid> --content "Updated text" --importance 0.9 --pinned true
+memoclaw update <uuid> --memory-type decision --namespace project-alpha
+memoclaw update <uuid> --expires-at 2026-06-01T00:00:00Z --immutable true
 
 # Delete a memory
 memoclaw delete <uuid>
@@ -473,6 +475,7 @@ The CLI handles both automatically.
 | Store batch (up to 100) | $0.04 |
 | Update memory | $0.005 |
 | Recall (semantic search) | $0.005 |
+| Batch update | $0.005 |
 | Extract facts | $0.01 |
 | Consolidate | $0.01 |
 | Ingest | $0.01 |

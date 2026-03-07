@@ -243,7 +243,7 @@ CLI: `memoclaw purge --namespace old-project` (deletes all in namespace)
 PATCH /v1/memories/batch
 ```
 
-Update multiple memories in one request. Charged $0.005 per request (not per memory) if any content changes trigger re-embedding.
+Update multiple memories in one request. Charged $0.005 per request (not per memory) if any content changes trigger re-embedding. No CLI equivalent — use the HTTP endpoint directly.
 
 Request:
 ```json
