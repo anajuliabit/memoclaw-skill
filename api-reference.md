@@ -589,7 +589,7 @@ Response:
 }
 ```
 
-CLI: `memoclaw list --sort importance --limit 10` (approximate equivalent)
+CLI: `memoclaw list --sort-by importance --limit 10` (approximate equivalent)
 
 ### Usage stats
 
