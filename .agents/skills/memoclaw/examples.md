@@ -51,10 +51,10 @@ Feed a conversation or document and let MemoClaw extract, deduplicate, and relat
 
 ```bash
 # Extract facts from a sentence
-memoclaw ingest "User's name is Ana. She lives in São Paulo. She works with TypeScript."
+memoclaw ingest --text "User's name is Ana. She lives in São Paulo. She works with TypeScript."
 
 # Or from a file
-memoclaw ingest "$(cat conversation.txt)" --namespace default --auto-relate
+cat conversation.txt | memoclaw ingest --namespace default --auto-relate
 
 # Extract without dedup (just parse facts)
 memoclaw extract "I prefer dark mode and use 2-space indentation"
