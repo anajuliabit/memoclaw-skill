@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.20.4
+version: 1.20.5
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -49,6 +49,7 @@ memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
+memoclaw core --limit 5                    # high-importance foundational memories (free)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
 ```
 
@@ -56,7 +57,7 @@ memoclaw list --sort-by importance --limit 5 # top memories (free)
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, search, suggested, relations, history, export, namespace list, stats, count
+**Free commands:** list, get, delete, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions
 
 ---
 
@@ -168,7 +169,7 @@ Use these to assign importance consistently:
 #### Session start
 1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --limit 10`
    — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Quick essentials** (free): `memoclaw list --sort-by importance --limit 5` — returns your highest-importance memories without using embeddings
+2. **Quick essentials** (free): `memoclaw core --limit 5` — returns your highest-importance, foundational memories without using embeddings (or `memoclaw list --sort-by importance --limit 5`)
 3. Use this context to personalize your responses
 
 #### During session
@@ -343,9 +344,6 @@ memoclaw suggested --category stale --limit 10
 # Migrate .md files to MemoClaw
 memoclaw migrate ./memory/
 
-# Batch update multiple memories
-memoclaw batch-update '[{"id":"uuid1","importance":0.9},{"id":"uuid2","pinned":true}]'
-
 # Bulk delete memories by ID
 memoclaw bulk-delete uuid1 uuid2 uuid3
 
@@ -369,8 +367,10 @@ memoclaw context "user preferences and recent decisions" --limit 10
 memoclaw search "PostgreSQL" --namespace project-alpha
 
 # Core memories (free — highest importance, most accessed, pinned)
-memoclaw list --sort-by importance --limit 10
-memoclaw list --sort-by importance --namespace project-alpha --limit 10
+memoclaw core                              # dedicated core memories endpoint
+memoclaw core --namespace project-alpha --limit 5
+memoclaw core --raw | head -5              # content only, for piping
+memoclaw list --sort-by importance --limit 10  # alternative via list
 
 # Export memories
 memoclaw export --format markdown --namespace default
@@ -479,7 +479,7 @@ The CLI handles both automatically.
 | Context | $0.01 |
 | Migrate (per request) | $0.01 |
 
-**Free:** List, Get, Delete, Bulk Delete, Search (text), Suggested, Relations, History, Export, Namespace, Stats, Count
+**Free:** List, Get, Delete, Bulk Delete, Search (text), Core, Suggested, Relations, History, Export, Import, Namespace, Stats, Count
 
 ## Setup
 
