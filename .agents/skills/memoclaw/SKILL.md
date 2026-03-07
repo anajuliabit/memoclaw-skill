@@ -215,7 +215,7 @@ memoclaw store "Session $(date +%Y-%m-%d): {1-sentence summary}" \
 #### Conversation digest (via ingest)
 ```bash
 # Extract facts from a transcript
-memoclaw ingest "$(cat conversation.txt)" --namespace default --auto-relate
+cat conversation.txt | memoclaw ingest --namespace default --auto-relate
 ```
 
 #### Key points extraction
@@ -313,7 +313,7 @@ cat memories.json | memoclaw store --batch
 # Recall memories
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
-memoclaw recall "user settings" --memory-type preference
+memoclaw recall "user settings" --tags preferences
 
 # Get a single memory by ID
 memoclaw get <uuid>
@@ -324,15 +324,15 @@ memoclaw list --namespace default --limit 20
 # Update a memory in-place
 memoclaw update <uuid> --content "Updated text" --importance 0.9 --pinned true
 memoclaw update <uuid> --memory-type decision --namespace project-alpha
-memoclaw update <uuid> --expires-at 2026-06-01T00:00:00Z --immutable true
+memoclaw update <uuid> --expires-at 2026-06-01T00:00:00Z
 
 # Delete a memory
 memoclaw delete <uuid>
 
 # Ingest raw text (extract + dedup + relate)
-memoclaw ingest "raw text to extract facts from"
-memoclaw ingest --text "alternative flag form"
+memoclaw ingest --text "raw text to extract facts from"
 memoclaw ingest --file meeting-notes.txt              # read from file
+echo "raw text" | memoclaw ingest                     # pipe via stdin
 
 # Extract facts from text
 memoclaw extract "User prefers dark mode. Timezone is PST."
@@ -360,7 +360,7 @@ memoclaw relations create <memory-id> <target-id> related_to
 memoclaw relations delete <memory-id> <relation-id>
 
 # Traverse the memory graph
-memoclaw graph <memory-id> --depth 2 --limit 50
+memoclaw graph <memory-id>
 
 # Assemble context block for LLM prompts
 memoclaw context "user preferences and recent decisions" --limit 10
@@ -583,11 +583,11 @@ If you've been using local markdown files (e.g., `MEMORY.md`, `memory/*.md`) for
 
 ```bash
 # Feed your existing memory file to ingest
-memoclaw ingest "$(cat MEMORY.md)" --namespace default
+cat MEMORY.md | memoclaw ingest --namespace default
 
 # Or for multiple files
 for f in memory/*.md; do
-  memoclaw ingest "$(cat "$f")" --namespace default
+  memoclaw ingest --file "$f" --namespace default
 done
 ```
 
