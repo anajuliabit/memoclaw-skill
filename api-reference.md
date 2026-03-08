@@ -644,7 +644,57 @@ CLI: `memoclaw import memories.json`
 POST /v1/migrate
 ```
 
-Import `.md` files. The API extracts facts, creates memories, and deduplicates.
+Import `.md` files as memories. The API splits each file on `## ` headers, extracts facts, auto-assigns importance/tags/memory_type, and deduplicates by content hash.
+
+Request:
+```json
+{
+  "files": [
+    {
+      "filename": "2026-01-15.md",
+      "content": "## User preferences\n\nPrefers dark mode and vim keybindings.\n\n## Project update\n\nDeployed v2.1 to production."
+    },
+    {
+      "filename": "decisions.md",
+      "content": "## Architecture decision\n\nDecided to use Postgres with pgvector instead of Pinecone."
+    }
+  ]
+}
+```
+
+Response (201):
+```json
+{
+  "files_processed": 2,
+  "memories_created": 3,
+  "memories_deduplicated": 0
+}
+```
+
+If any file fails, partial results are returned with an `errors` array:
+```json
+{
+  "files_processed": 1,
+  "memories_created": 2,
+  "memories_deduplicated": 0,
+  "errors": [
+    {"filename": "bad.md", "error": "processing failed"}
+  ]
+}
+```
+
+Fields:
+- `files` (required): Array of `{filename, content}` objects
+- `files[].filename` (required): String — original filename, used for date extraction (e.g. `2026-01-15.md`) and tag generation
+- `files[].content` (required): String — raw markdown content of the file
+- Max 10 files per request (use smaller batches to avoid timeouts)
+- Each `## ` section becomes a separate memory; files without headers become a single memory
+- Content per memory is truncated at 8000 characters
+- Sections shorter than 5 characters are skipped
+- Tags are auto-generated from headers, filename dates, plus `migrated` and `openclaw`
+- Importance is auto-estimated from content heuristics (decisions/corrections: 0.9, preferences: 0.8, projects: 0.7, daily notes: 0.6)
+- Memory type is auto-detected: `correction`, `preference`, `decision`, `project`, `observation`, or `general`
+- Deduplication uses SHA-256 content hashing (both within-batch and cross-request via `content_hash` metadata)
 
 CLI: `memoclaw migrate ./memory/`
 
