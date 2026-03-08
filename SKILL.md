@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.20.8
+version: 1.20.10
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -52,6 +52,16 @@ memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
 memoclaw core --limit 5                    # high-importance foundational memories (free)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
 memoclaw whoami                            # print your wallet address (free)
+```
+
+**Management commands:**
+```bash
+memoclaw update <uuid> --content "new text" --importance 0.9  # update in-place ($0.005 if content changes)
+memoclaw ingest --text "raw text to extract facts from"       # auto-extract + dedup ($0.01)
+memoclaw extract "fact1. fact2. fact3."                        # split into separate memories ($0.01)
+memoclaw consolidate --namespace default --dry-run             # merge similar memories ($0.01)
+memoclaw suggested --category stale --limit 10                 # proactive suggestions (free)
+memoclaw migrate ./memory/                                     # import .md files ($0.01)
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
@@ -427,6 +437,8 @@ memoclaw completions zsh >> ~/.zshrc
 -m, --sort-by <field>   # Sort by: id, importance, created, updated
 -w, --watch             # Continuous polling for changes
 --watch-interval <ms>   # Polling interval for watch mode (default: 5000)
+--agent-id <id>         # Agent identifier for multi-agent scoping
+--session-id <id>       # Session identifier for per-conversation scoping
 -s, --truncate <n>      # Truncate output to n characters
 --no-truncate           # Disable truncation
 -c, --concurrency <n>   # Parallel imports (default: 1)
@@ -589,16 +601,23 @@ API call failed?
 
 If you've been using local markdown files (e.g., `MEMORY.md`, `memory/*.md`) for persistence, here's how to migrate:
 
-### Step 1: Extract facts from existing files
+### Step 1: Migrate .md files
+
+Use the dedicated `migrate` command — it splits files on `## ` headers, deduplicates by content hash, auto-assigns importance/tags/memory_type, and processes up to 10 files per batch:
 
 ```bash
-# Feed your existing memory file to ingest
-cat MEMORY.md | memoclaw ingest --namespace default
+# Migrate a directory of .md files (recommended)
+memoclaw migrate ./memory/
 
-# Or for multiple files
-for f in memory/*.md; do
-  memoclaw ingest --file "$f" --namespace default
-done
+# Migrate a single file
+memoclaw migrate ./MEMORY.md
+```
+
+For non-.md raw text (conversation transcripts, logs), use `ingest` instead:
+
+```bash
+# Extract facts from raw text
+cat transcript.txt | memoclaw ingest --namespace default
 ```
 
 ### Step 2: Verify migration
@@ -606,6 +625,7 @@ done
 ```bash
 # Check what was stored
 memoclaw list --limit 50
+memoclaw count   # quick total
 
 # Test recall
 memoclaw recall "user preferences"
