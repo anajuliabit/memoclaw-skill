@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.20.7
+version: 1.20.8
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -51,13 +51,14 @@ memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
 memoclaw core --limit 5                    # high-importance foundational memories (free)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
+memoclaw whoami                            # print your wallet address (free)
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions
+**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status
 
 ---
 
@@ -297,6 +298,9 @@ memoclaw init
 # Check free tier status
 memoclaw status
 
+# Print your wallet address
+memoclaw whoami
+
 # Store a memory
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
 
@@ -409,6 +413,11 @@ memoclaw completions zsh >> ~/.zshrc
 **Global flags (work with any command):**
 ```bash
 -j, --json              # Machine-readable JSON output (best for agent piping)
+-n, --namespace <name>  # Filter/set namespace
+-l, --limit <n>         # Limit results
+-o, --offset <n>        # Pagination offset
+-t, --tags <a,b>        # Comma-separated tags
+-f, --format <fmt>      # Output format: json, table, csv, yaml
 -O, --output <file>     # Write output to file instead of stdout
 -F, --field <name>      # Extract a specific field from output
 -k, --columns <cols>    # Select columns: id,content,importance,tags,created
@@ -422,6 +431,7 @@ memoclaw completions zsh >> ~/.zshrc
 --no-truncate           # Disable truncation
 -c, --concurrency <n>   # Parallel imports (default: 1)
 -y, --yes               # Skip confirmation prompts (alias for --force)
+--force                 # Skip confirmation prompts
 -T, --timeout <sec>     # Request timeout (default: 30)
 -p, --pretty            # Pretty-print JSON output
 -q, --quiet             # Suppress non-essential output
