@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.20.10
+version: 1.21.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -94,6 +94,25 @@ Is the information worth remembering across sessions?
          │  └─ Ephemeral observation → importance 0.3-0.5 (or skip)
          └─ Multiple facts / raw conversation → Use `ingest` (auto-extract + dedup)
 ```
+
+### Which retrieval command?
+
+```
+Need to retrieve memories?
+├─ Need high-importance foundational facts (session start)? → memoclaw core (FREE)
+├─ Know the exact keyword or phrase? → memoclaw search "keyword" (FREE)
+├─ Need semantic similarity match? → memoclaw recall "query" ($0.005)
+└─ Need an LLM-ready context block for a prompt? → memoclaw context "query" ($0.01)
+```
+
+| Command | Cost | How it works | Best for |
+|---------|------|-------------|----------|
+| `core` | Free | Returns pinned + high-importance memories, no query needed | Session start, loading essentials |
+| `search` | Free | Keyword/text match (no embeddings) | Exact terms, checking if something exists |
+| `recall` | $0.005 | Semantic vector search (embeddings) | "What did user say about X?" style queries |
+| `context` | $0.01 | GPT assembles an LLM-ready block from relevant memories | Feeding context into a system prompt |
+
+**Cost-saving tip:** Start with `core` + `search` (both free). Only use `recall`/`context` when you need semantic understanding or formatted output.
 
 ### When MemoClaw beats local files
 
