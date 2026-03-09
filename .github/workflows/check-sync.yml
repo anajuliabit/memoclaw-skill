@@ -19,3 +19,7 @@ jobs:
       - name: Check examples.md is in sync
         run: |
           diff examples.md .agents/skills/memoclaw/examples.md || { echo "::error::examples.md and .agents/skills/memoclaw/examples.md are out of sync. Run: cp examples.md .agents/skills/memoclaw/examples.md"; exit 1; }
+
+      - name: Check api-reference.md is in sync
+        run: |
+          diff api-reference.md .agents/skills/memoclaw/api-reference.md || { echo "::error::api-reference.md and .agents/skills/memoclaw/api-reference.md are out of sync. Run: cp api-reference.md .agents/skills/memoclaw/api-reference.md"; exit 1; }
