@@ -44,9 +44,9 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 **Essential commands:**
 ```bash
 memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)  [types: correction|preference|decision|project|observation|general]
-memoclaw store --file notes.txt --importance 0.7       # store from file ($0.005)
-echo -e "fact1\nfact2" | memoclaw store --batch       # batch from stdin ($0.04)
-memoclaw store "fact" --pinned --immutable             # pinned + locked forever
+memoclaw store --file notes.txt --importance 0.7 --memory-type general  # store from file ($0.005)
+echo -e "fact1\nfact2" | memoclaw store --batch --memory-type general  # batch from stdin ($0.04)
+memoclaw store "fact" --pinned --immutable --memory-type correction  # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw search "keyword"                  # text search (free)
@@ -339,9 +339,9 @@ memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui -
 
 # Store with additional flags
 memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned
-memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z
-memoclaw store --file ./notes.txt --importance 0.7 --tags meeting  # read content from file
-memoclaw store "key fact" --id-only                                # print only the UUID (for scripting)
+memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z --memory-type observation
+memoclaw store --file ./notes.txt --importance 0.7 --tags meeting --memory-type general  # read content from file
+memoclaw store "key fact" --id-only --memory-type general           # print only the UUID (for scripting)
 
 # Batch store from stdin (one per line or JSON array)
 echo -e "fact one\nfact two" | memoclaw store --batch
