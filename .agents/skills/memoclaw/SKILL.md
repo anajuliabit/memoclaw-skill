@@ -39,6 +39,8 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 
 ## Quick reference
 
+> 📖 For full end-to-end examples (session flows, migration, multi-agent patterns, cost breakdown), see [examples.md](examples.md).
+
 **Essential commands:**
 ```bash
 memoclaw store "fact" --importance 0.8 --tags t1,t2 --memory-type preference   # save ($0.005)  [types: correction|preference|decision|project|observation|general]
@@ -296,6 +298,8 @@ Things that waste calls or degrade recall quality:
 - **Single namespace for everything** — Use namespaces to keep different contexts separate.
 
 ### Example flow
+
+> See [examples.md](examples.md) for 10 detailed scenarios including session lifecycle, migration, multi-agent patterns, and cost breakdown.
 
 ```
 User: "Remember, I prefer tabs over spaces"
