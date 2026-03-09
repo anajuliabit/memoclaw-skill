@@ -342,14 +342,14 @@ memoclaw whoami
 memoclaw store "User prefers dark mode" --importance 0.8 --tags preferences,ui --memory-type preference
 
 # Store with additional flags
-memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned
+memoclaw store "Never deploy on Fridays" --importance 0.95 --immutable --pinned --memory-type correction
 memoclaw store "Session note" --expires-at 2026-04-01T00:00:00Z --memory-type observation
 memoclaw store --file ./notes.txt --importance 0.7 --tags meeting --memory-type general  # read content from file
 memoclaw store "key fact" --id-only --memory-type general           # print only the UUID (for scripting)
 
 # Batch store from stdin (one per line or JSON array)
-echo -e "fact one\nfact two" | memoclaw store --batch
-cat memories.json | memoclaw store --batch
+echo -e "fact one\nfact two" | memoclaw store --batch --memory-type general
+cat memories.json | memoclaw store --batch --memory-type general
 
 # Recall memories
 memoclaw recall "what theme does user prefer"
@@ -737,6 +737,11 @@ Duplicate memories piling up
 
 "Immutable memory cannot be updated"
 → Memory was stored with immutable: true — it cannot be changed or deleted by design
+
+CLI --help shows wrong memory types (e.g. "core, episodic, semantic")
+→ The CLI help text is outdated. The API accepts ONLY these types:
+  correction, preference, decision, project, observation, general
+→ Always use the types documented in this skill file, not the CLI --help output.
 ```
 
 ### Quick health check
