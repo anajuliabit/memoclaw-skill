@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.21.1
+version: 1.22.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -64,13 +64,17 @@ memoclaw extract "fact1. fact2. fact3."                        # split into sepa
 memoclaw consolidate --namespace default --dry-run             # merge similar memories ($0.01)
 memoclaw suggested --category stale --limit 10                 # proactive suggestions (free)
 memoclaw migrate ./memory/                                     # import .md files ($0.01)
+memoclaw diff <uuid>                                           # show content changes between versions (free)
+memoclaw diff <uuid> --all                                     # show all diffs in sequence (free)
+memoclaw upgrade                                               # check for and install CLI updates
+memoclaw upgrade --check                                       # check only, don't install
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status
+**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, diff, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status, upgrade
 
 ---
 
@@ -424,6 +428,11 @@ memoclaw stats
 # View memory change history
 memoclaw history <uuid>
 
+# Show content diff between memory versions (unified diff, free)
+memoclaw diff <uuid>                   # latest vs previous
+memoclaw diff <uuid> --revision 2      # specific revision
+memoclaw diff <uuid> --all             # all diffs in sequence
+
 # Quick memory count
 memoclaw count
 memoclaw count --namespace project-alpha
@@ -437,6 +446,11 @@ memoclaw import memories.json
 # Show/validate config
 memoclaw config show
 memoclaw config check
+
+# Check for CLI updates
+memoclaw upgrade                       # check and prompt to install
+memoclaw upgrade --check               # check only, don't install
+memoclaw upgrade --yes                 # auto-install without prompting
 
 # Shell completions
 memoclaw completions bash >> ~/.bashrc
@@ -468,6 +482,11 @@ memoclaw completions zsh >> ~/.zshrc
 -y, --yes               # Skip confirmation prompts (alias for --force)
 --force                 # Skip confirmation prompts
 -T, --timeout <sec>     # Request timeout (default: 30)
+-M, --memory-type <t>   # Memory type (global alias for --memory-type)
+--retries <n>           # Max retries on transient errors (default: 3)
+--no-retry              # Disable retries (fail-fast mode)
+--since <date>          # Filter by creation date (ISO 8601 or relative: 1h, 7d, 2w, 1mo, 1y)
+--until <date>          # Filter by creation date (upper bound)
 -p, --pretty            # Pretty-print JSON output
 -q, --quiet             # Suppress non-essential output
 ```
