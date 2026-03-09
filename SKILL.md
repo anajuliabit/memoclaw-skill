@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.21.0
+version: 1.21.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -38,6 +38,8 @@ If `memoclaw init` has never been run, **all commands will fail**. Run it first 
 ---
 
 ## Quick reference
+
+> 📖 For full end-to-end examples (session flows, migration, multi-agent patterns, cost breakdown), see [examples.md](examples.md).
 
 **Essential commands:**
 ```bash
@@ -296,6 +298,8 @@ Things that waste calls or degrade recall quality:
 - **Single namespace for everything** — Use namespaces to keep different contexts separate.
 
 ### Example flow
+
+> See [examples.md](examples.md) for 10 detailed scenarios including session lifecycle, migration, multi-agent patterns, and cost breakdown.
 
 ```
 User: "Remember, I prefer tabs over spaces"
