@@ -591,6 +591,24 @@ Response:
 
 CLI: `memoclaw list --sort-by importance --limit 10` (approximate equivalent)
 
+### List tags
+
+```
+GET /v1/tags?namespace=default
+```
+
+Returns all unique tags used across your memories. Free.
+
+Response:
+```json
+{
+  "tags": ["preferences", "tools", "session-summary", "architecture"],
+  "total": 4
+}
+```
+
+CLI: `memoclaw tags` or `memoclaw tags --namespace project-alpha`
+
 ### Usage stats
 
 ```
