@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.22.4
+version: 1.22.6
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -61,6 +61,19 @@ memoclaw whoami                            # print your wallet address (free)
 **Management commands:**
 ```bash
 memoclaw update <uuid> --content "new text" --importance 0.9  # update in-place ($0.005 if content changes)
+memoclaw edit <uuid>                                           # open memory in $EDITOR for interactive editing (free)
+memoclaw pin <uuid>                                            # pin a memory (exempt from decay) (free)
+memoclaw unpin <uuid>                                          # unpin a memory (free)
+memoclaw lock <uuid>                                           # make memory immutable (free)
+memoclaw unlock <uuid>                                         # make memory mutable again (free)
+memoclaw copy <uuid>                                           # duplicate a memory with a new ID (free)
+memoclaw copy <uuid> --namespace other-project                 # duplicate into a different namespace
+memoclaw move <uuid> --namespace archive                       # move memory to another namespace (free)
+memoclaw move <uuid1> <uuid2> --namespace archive              # move multiple memories at once
+memoclaw tags                                                  # list all unique tags across memories (free)
+memoclaw tags --namespace project-alpha                        # list tags in a specific namespace
+memoclaw watch                                                 # stream new memories in real-time (polls API)
+memoclaw watch --namespace myproject --json                    # watch filtered, JSON output for piping
 memoclaw ingest --text "raw text to extract facts from"       # auto-extract + dedup ($0.01)
 memoclaw ingest --text "raw text" --auto-relate                # extract + auto-link related facts ($0.01)
 memoclaw extract "fact1. fact2. fact3."                        # split into separate memories ($0.01)
@@ -77,7 +90,7 @@ memoclaw upgrade --check                                       # check only, don
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, diff, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status, upgrade
+**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, diff, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status, upgrade, pin, unpin, lock, unlock, edit, copy, move, tags, watch
 
 ---
 
@@ -373,6 +386,36 @@ memoclaw update <uuid> --expires-at 2026-06-01T00:00:00Z
 
 # Delete a memory
 memoclaw delete <uuid>
+
+# Pin / unpin a memory (shorthand for update --pinned true/false)
+memoclaw pin <uuid>
+memoclaw unpin <uuid>
+
+# Lock / unlock a memory (shorthand for update --immutable true/false)
+memoclaw lock <uuid>                           # immutable — cannot update or delete
+memoclaw unlock <uuid>                         # make mutable again
+
+# Edit a memory interactively in your editor
+memoclaw edit <uuid>                           # uses $EDITOR, $VISUAL, or vi
+memoclaw edit <uuid> --editor vim              # override editor
+
+# Duplicate a memory
+memoclaw copy <uuid>                           # new ID, mutable even if source was immutable
+memoclaw copy <uuid> --namespace other-project --importance 0.9 --tags new-tag
+
+# Move memories to another namespace
+memoclaw move <uuid> --namespace archive
+memoclaw move <uuid1> <uuid2> --namespace production
+memoclaw list --namespace staging --json | jq -r '.memories[].id' | memoclaw move --namespace production
+
+# List all unique tags (free)
+memoclaw tags
+memoclaw tags --namespace project-alpha --json
+
+# Watch for new memories in real-time
+memoclaw watch                                 # stream to stdout
+memoclaw watch --namespace myproject --interval 5
+memoclaw watch --json | jq 'select(.importance > 0.8)'
 
 # Ingest raw text (extract + dedup + relate)
 memoclaw ingest --text "raw text to extract facts from"
