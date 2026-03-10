@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.22.3
+version: 1.22.4
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -49,8 +49,10 @@ echo -e "fact1\nfact2" | memoclaw store --batch --memory-type general  # batch f
 memoclaw store "fact" --pinned --immutable --memory-type correction  # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
+memoclaw recall "query" --include-relations              # include linked memories
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
+memoclaw context "query" --summarize --include-metadata  # summarized with metadata ($0.01)
 memoclaw core --limit 5                    # high-importance foundational memories (free)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
 memoclaw whoami                            # print your wallet address (free)
@@ -60,6 +62,7 @@ memoclaw whoami                            # print your wallet address (free)
 ```bash
 memoclaw update <uuid> --content "new text" --importance 0.9  # update in-place ($0.005 if content changes)
 memoclaw ingest --text "raw text to extract facts from"       # auto-extract + dedup ($0.01)
+memoclaw ingest --text "raw text" --auto-relate                # extract + auto-link related facts ($0.01)
 memoclaw extract "fact1. fact2. fact3."                        # split into separate memories ($0.01)
 memoclaw consolidate --namespace default --dry-run             # merge similar memories ($0.01)
 memoclaw suggested --category stale --limit 10                 # proactive suggestions (free)
@@ -355,6 +358,7 @@ cat memories.json | memoclaw store --batch --memory-type general
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
 memoclaw recall "user settings" --tags preferences
+memoclaw recall "query" --include-relations            # include linked memories in results
 
 # Get a single memory by ID
 memoclaw get <uuid>
@@ -372,6 +376,7 @@ memoclaw delete <uuid>
 
 # Ingest raw text (extract + dedup + relate)
 memoclaw ingest --text "raw text to extract facts from"
+memoclaw ingest --text "raw text" --auto-relate       # auto-link related facts
 memoclaw ingest --file meeting-notes.txt              # read from file
 echo "raw text" | memoclaw ingest                     # pipe via stdin
 
@@ -405,6 +410,8 @@ memoclaw graph <memory-id>
 
 # Assemble context block for LLM prompts
 memoclaw context "user preferences and recent decisions" --limit 10
+memoclaw context "query" --summarize                   # LLM-merged output
+memoclaw context "query" --include-metadata            # include tags, importance, type
 
 # Full-text keyword search (free, no embeddings)
 memoclaw search "PostgreSQL" --namespace project-alpha
@@ -498,6 +505,9 @@ memoclaw list --raw --limit 5                                 # pipe content onl
 memoclaw list --field importance --limit 1                    # extract single field
 memoclaw export --output backup.json                          # save to file
 memoclaw list --sort-by importance --reverse --limit 5        # lowest importance first
+memoclaw list --since 7d                                      # memories from last 7 days
+memoclaw list --since 2026-01-01 --until 2026-02-01          # date range filter
+memoclaw recall "query" --since 1mo                          # recall only recent memories
 ```
 
 **Setup:**
