@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.22.10
+version: 1.23.0
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -82,13 +82,15 @@ memoclaw diff <uuid>                                           # show content ch
 memoclaw diff <uuid> --all                                     # show all diffs in sequence (free)
 memoclaw upgrade                                               # check for and install CLI updates
 memoclaw upgrade --check                                       # check only, don't install
+memoclaw alias set myname <uuid>                               # local shortcut for a memory ID (free)
+memoclaw snapshot create --name before-purge                   # local backup before destructive ops (free)
 ```
 
 **Importance cheat sheet:** `0.9+` corrections/critical · `0.7–0.8` preferences · `0.5–0.6` context · `≤0.4` ephemeral
 
 **Memory types:** `correction` (180d) · `preference` (180d) · `decision` (90d) · `project` (30d) · `observation` (14d) · `general` (60d)
 
-**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, diff, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status, upgrade, pin, unpin, lock, unlock, edit, copy, move, tags, watch
+**Free commands:** list, get, delete, bulk-delete, purge, search, core, suggested, relations, history, diff, export, import, namespace list, stats, count, browse, config, graph, completions, whoami, status, upgrade, pin, unpin, lock, unlock, edit, copy, move, tags, watch, alias, snapshot create/list/delete
 
 ---
 
@@ -500,6 +502,23 @@ memoclaw upgrade                       # check and prompt to install
 memoclaw upgrade --check               # check only, don't install
 memoclaw upgrade --yes                 # auto-install without prompting
 
+# Aliases — human-readable shortcuts for memory IDs (local, free)
+memoclaw alias set project-ctx <uuid>  # create alias
+memoclaw alias list                    # list all aliases with previews
+memoclaw alias rm project-ctx          # remove alias
+# Use aliases anywhere a memory ID is expected:
+memoclaw get @project-ctx
+memoclaw update @project-ctx --content "updated"
+memoclaw history @project-ctx
+memoclaw diff @project-ctx
+
+# Snapshots — point-in-time namespace backups (local, free to create)
+memoclaw snapshot create               # snapshot default namespace
+memoclaw snapshot create --name before-purge --namespace project1
+memoclaw snapshot list                 # list all snapshots
+memoclaw snapshot restore before-purge # restore (import cost applies)
+memoclaw snapshot delete before-purge  # delete a snapshot
+
 # Shell completions
 memoclaw completions bash >> ~/.bashrc
 memoclaw completions zsh >> ~/.zshrc
@@ -642,6 +661,8 @@ See the prerequisites checklist at the top and the CLI usage section for `memocl
 8. **Decay naturally** — High importance + recency = higher ranking
 9. **Pin critical memories** — Use `pinned: true` for facts that should never decay (e.g. user's name)
 10. **Use relations** — Link related memories with `supersedes`, `contradicts`, `supports` for richer recall
+11. **Snapshot before destructive ops** — Run `memoclaw snapshot create --name before-purge` before consolidate or purge
+12. **Use aliases** — `memoclaw alias set ctx <uuid>` for memories you reference often, then `memoclaw get @ctx`
 
 ## Error handling
 
