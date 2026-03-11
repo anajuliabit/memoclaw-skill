@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.23.0
+version: 1.23.1
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -216,13 +216,29 @@ Use these to assign importance consistently:
 | observation | 0.3-0.5 | 14 days |
 | general | 0.4-0.6 | 60 days |
 
+### Which management command?
+
+```
+Need to manage memories?
+├─ Reference a memory often? → memoclaw alias set name <uuid> (FREE, local)
+├─ About to purge or consolidate? → memoclaw snapshot create --name reason (FREE, local)
+├─ Memory should never decay? → memoclaw pin <uuid> (FREE)
+├─ Memory should never be edited? → memoclaw lock <uuid> (FREE)
+├─ Need the same memory in another namespace? → memoclaw copy <uuid> --namespace target (FREE)
+├─ Memory is in the wrong namespace? → memoclaw move <uuid> --namespace target (FREE)
+├─ Duplicate memories piling up? → memoclaw consolidate --dry-run ($0.01)
+└─ Stale memories cluttering results? → memoclaw suggested --category stale (FREE)
+```
+
 ### Session lifecycle
 
-#### Session start
-1. **Load context** (preferred): `memoclaw context "user preferences and recent decisions" --limit 10`
-   — or manually: `memoclaw recall "recent important context" --limit 5`
-2. **Quick essentials** (free): `memoclaw core --limit 5` — returns your highest-importance, foundational memories without using embeddings (or `memoclaw list --sort-by importance --limit 5`)
-3. Use this context to personalize your responses
+#### Session start (cost-efficient pattern)
+1. **Free first** — `memoclaw core --limit 5` — pinned + high-importance memories, no embeddings cost
+2. **Free keyword check** — `memoclaw search "keyword" --since 7d` — recent memories matching known terms
+3. **Paid only if needed** — `memoclaw recall "query" --since 7d --limit 5` ($0.005) — semantic search when free methods aren't enough
+4. **Full context** (rare) — `memoclaw context "user preferences and recent decisions" --limit 10` ($0.01) — LLM-assembled block when starting a complex session
+
+**Tip:** Use `--since 7d` (or `1d`, `1mo`) to limit recall to recent memories — cheaper and more relevant than searching everything.
 
 #### During session
 - Store new facts as they emerge (recall first to avoid duplicates)
@@ -316,6 +332,9 @@ Things that waste calls or degrade recall quality:
 - **Never consolidating** — Memories fragment over time. Run consolidate periodically.
 - **Ignoring decay** — Memories decay naturally. Review stale ones with `memoclaw suggested --category stale`.
 - **Single namespace for everything** — Use namespaces to keep different contexts separate.
+- **Unbounded recall** — Always use `--limit` and consider `--since` to scope queries. Recalling 100 memories when you need 3 wastes tokens.
+- **Paying for free-tier answers** — Check `core` and `search` (free) before reaching for `recall` ($0.005) or `context` ($0.01).
+- **Skipping snapshots before destructive ops** — Always `memoclaw snapshot create` before `consolidate` or `purge`.
 
 ### Example flow
 
