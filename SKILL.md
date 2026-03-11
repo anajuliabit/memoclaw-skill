@@ -52,7 +52,6 @@ memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
 memoclaw recall "query" --include-relations              # include linked memories
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
-memoclaw context "query" --summarize --include-metadata  # summarized with metadata ($0.01)
 memoclaw core --limit 5                    # high-importance foundational memories (free)
 memoclaw list --sort-by importance --limit 5 # top memories (free)
 memoclaw whoami                            # print your wallet address (free)
@@ -453,8 +452,8 @@ memoclaw graph <memory-id>
 
 # Assemble context block for LLM prompts
 memoclaw context "user preferences and recent decisions" --limit 10
-memoclaw context "query" --summarize                   # LLM-merged output
-memoclaw context "query" --include-metadata            # include tags, importance, type
+# Note: The API supports `summarize` and `include_metadata` params, but the CLI
+# does not yet expose them as flags. Use the REST API directly if you need these.
 
 # Full-text keyword search (free, no embeddings)
 memoclaw search "PostgreSQL" --namespace project-alpha
@@ -790,6 +789,11 @@ Duplicate memories piling up
 
 "Immutable memory cannot be updated"
 → Memory was stored with immutable: true — it cannot be changed or deleted by design
+
+context --summarize or --include-metadata has no effect
+→ The CLI does not yet support these flags (they are silently ignored).
+→ The API supports `summarize` and `include_metadata` on POST /v1/context.
+→ If you need these features, make a direct HTTP call instead of using the CLI.
 
 CLI --help shows wrong memory types (e.g. "core, episodic, semantic")
 → The CLI help text is outdated. The API accepts ONLY these types:
