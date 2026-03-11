@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.22.8
+version: 1.22.9
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -49,7 +49,6 @@ echo -e "fact1\nfact2" | memoclaw store --batch --memory-type general  # batch f
 memoclaw store "fact" --pinned --immutable --memory-type correction  # pinned + locked forever
 memoclaw recall "query"                    # semantic search ($0.005)
 memoclaw recall "query" --min-similarity 0.7 --limit 3  # stricter match
-memoclaw recall "query" --include-relations              # include linked memories
 memoclaw search "keyword"                  # text search (free)
 memoclaw context "what I need" --limit 10  # LLM-ready block ($0.01)
 memoclaw core --limit 5                    # high-importance foundational memories (free)
@@ -370,7 +369,7 @@ cat memories.json | memoclaw store --batch --memory-type general
 memoclaw recall "what theme does user prefer"
 memoclaw recall "project decisions" --namespace myproject --limit 5
 memoclaw recall "user settings" --tags preferences
-memoclaw recall "query" --include-relations            # include linked memories in results
+# Note: To include linked memories, use `memoclaw relations list <id>` after recall.
 
 # Get a single memory by ID
 memoclaw get <uuid>
@@ -465,7 +464,7 @@ memoclaw core --raw | head -5              # content only, for piping
 memoclaw list --sort-by importance --limit 10  # alternative via list
 
 # Export memories
-memoclaw export --format markdown --namespace default
+memoclaw export --format json --namespace default
 
 # List namespaces with memory counts
 memoclaw namespace list
@@ -794,6 +793,10 @@ context --summarize or --include-metadata has no effect
 → The CLI does not yet support these flags (they are silently ignored).
 → The API supports `summarize` and `include_metadata` on POST /v1/context.
 → If you need these features, make a direct HTTP call instead of using the CLI.
+
+recall --include-relations is not a valid flag
+→ The CLI does not support --include-relations.
+→ To get linked memories, first recall, then run `memoclaw relations list <id>` on results.
 
 CLI --help shows wrong memory types (e.g. "core, episodic, semantic")
 → The CLI help text is outdated. The API accepts ONLY these types:
