@@ -198,6 +198,114 @@ memoclaw recall "recent session summaries and open questions" --limit 5
 memoclaw consolidate --namespace project-backend --dry-run
 ```
 
+## Example 11: Error recovery and graceful degradation
+
+What to do when things go wrong — keep helping the user regardless.
+
+```bash
+# Check if MemoClaw is reachable before a session
+memoclaw config check && memoclaw status
+# If this fails: fall back to local files for this session
+
+# Handle "402 Payment Required" — free tier exhausted
+memoclaw status                    # confirm free_calls_remaining is 0
+memoclaw whoami                    # get wallet address to fund
+# Fund wallet with USDC on Base, then retry
+
+# Handle "409 Conflict" — tried to update an immutable memory
+# Don't try to update it. Store a new memory and link them:
+memoclaw store "Updated: user now prefers spaces (was tabs)" \
+  --importance 0.85 --memory-type preference --tags code-style
+memoclaw relations create <new-id> <old-id> supersedes
+
+# Handle "413 Payload Too Large" — content over 8192 chars
+# Split the content into smaller chunks:
+memoclaw extract "First half of the long content..."
+memoclaw extract "Second half of the long content..."
+
+# Handle network errors — API unreachable
+# Write to a local scratch file and sync later:
+echo "User prefers dark mode (importance: 0.8)" >> /tmp/memoclaw-pending.txt
+# Next session, when API is back:
+cat /tmp/memoclaw-pending.txt | memoclaw ingest && rm /tmp/memoclaw-pending.txt
+```
+
+**Key principle:** Never let a MemoClaw outage block the user. Fall back to local files, note what needs syncing, and catch up when the API returns.
+
+## Example 12: Cost-aware session patterns
+
+Keep costs predictable by using free commands first and paid ones only when needed.
+
+```bash
+# === BUDGET-FRIENDLY SESSION START ===
+# Step 1: Free — load pinned + high-importance memories
+memoclaw core --limit 5
+
+# Step 2: Free — keyword check for recent context
+memoclaw search "project-alpha" --since 7d
+
+# Step 3: Paid ($0.005) — only if free methods didn't surface what you need
+memoclaw recall "user's deployment preferences" --since 7d --limit 3
+
+# === DURING SESSION ===
+# Before storing, always check if it already exists (free search first)
+memoclaw search "dark mode"              # free keyword check
+# Only if not found:
+memoclaw store "User prefers dark mode" --importance 0.8 --memory-type preference
+
+# === SESSION END ===
+# One store for the summary ($0.005)
+memoclaw store "Session 2026-03-12: reviewed CI pipeline, user wants faster deploys" \
+  --importance 0.6 --tags session-summary --memory-type observation
+
+# === DAILY COST ESTIMATE ===
+# 3 stores + 2 recalls = 5 × $0.005 = $0.025/day
+# Everything else (list, search, core, stats) is free
+```
+
+**Monthly cost at different usage levels:**
+
+| Style | Paid calls/day | Daily cost | Monthly cost |
+|-------|---------------|------------|-------------|
+| Light (hobbyist) | 3-5 | $0.015-0.025 | ~$0.50-0.75 |
+| Moderate (daily agent) | 10-20 | $0.05-0.10 | ~$1.50-3.00 |
+| Heavy (multi-agent) | 30-50 | $0.15-0.25 | ~$4.50-7.50 |
+
+## Example 13: Piping and scripting patterns
+
+Combine MemoClaw with standard Unix tools for powerful workflows.
+
+```bash
+# Export all high-importance memories as plain text
+memoclaw list --sort-by importance --limit 20 --raw
+
+# Get just the IDs of memories matching a tag
+memoclaw list --tags preferences --json | jq -r '.memories[].id'
+
+# Bulk pin all memories with "critical" tag
+memoclaw list --tags critical --json | jq -r '.memories[].id' | \
+  xargs -I{} memoclaw pin {}
+
+# Move all stale memories to an archive namespace
+memoclaw suggested --category stale --json | jq -r '.suggested[].id' | \
+  memoclaw move --namespace archive
+
+# Count memories by type
+memoclaw list --json --limit 1000 | jq '.memories | group_by(.memory_type) | map({type: .[0].memory_type, count: length})'
+
+# Back up a namespace to a file before purging
+memoclaw export --format json --namespace old-project --output backup-old-project.json
+memoclaw purge --namespace old-project --force
+
+# Diff all memories that changed this week
+memoclaw list --since 7d --json | jq -r '.memories[].id' | \
+  xargs -I{} sh -c 'echo "=== {} ===" && memoclaw diff {} 2>/dev/null'
+
+# Pipe recall results into another tool
+memoclaw recall "deployment process" --raw | pbcopy   # copy to clipboard (macOS)
+memoclaw recall "API endpoints" --raw > context.txt   # save to file for LLM prompt
+```
+
 ## Cost breakdown
 
 For a typical agent running daily:

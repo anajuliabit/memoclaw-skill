@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.23.1
+version: 1.23.2
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
