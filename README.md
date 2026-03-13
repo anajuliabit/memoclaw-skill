@@ -1,77 +1,67 @@
 # MemoClaw Skill
 
-Semantic memory API for AI agents. Wallet = identity.
+Persistent semantic memory for AI agents. Store facts, recall them later with natural language. No API keys — your wallet is your identity.
 
-## Install
+**Install:** `clawhub install memoclaw`
 
-```bash
-clawhub install memoclaw
-```
-
-Or manually copy `SKILL.md` to your agent's skills directory.
-
-## Quick Start
+## 30-second quickstart
 
 ```bash
-# Setup (one-time, interactive — saves to ~/.memoclaw/config.json)
 npm install -g memoclaw
-memoclaw init
-
-# Store a memory
-memoclaw store "Meeting notes: discussed Q1 roadmap" \
-  --importance 0.8 --tags work --memory-type project
-
-# Recall memories
-memoclaw recall "what did we discuss about roadmap"
-
-# Session start — load context
-memoclaw context "user preferences and recent decisions" --limit 10
-
-# Session end — store summary
-memoclaw store "Session 2026-02-13: Discussed project priorities" \
-  --importance 0.6 --tags session-summary --memory-type observation
+memoclaw init                    # one-time wallet setup
+memoclaw store "User prefers dark mode" --importance 0.8 --memory-type preference
+memoclaw recall "UI preferences"  # semantic search
 ```
 
-## Key Features
+## How it works
 
-- **Semantic Search** - Natural language recall across all memories
-- **Auto-Deduplication** - Built-in consolidate to merge similar memories  
-- **Importance Scoring** - Rank memories by significance (0-1)
-- **Memory Types** - Automatic decay based on type (correction: 180d, preference: 180d, decision: 90d)
-- **Namespaces** - Organize memories per project or context
-- **Relations** - Link related memories (supersedes, contradicts, supports)
+1. **Store** facts with importance scores, tags, and memory types
+2. **Recall** with natural language — vector search finds semantically similar memories
+3. **Decay** naturally — memory types control half-lives (corrections: 180d, observations: 14d)
+4. **Pin** critical facts so they never decay
 
-## When to Use MemoClaw
+Every wallet gets **100 free API calls**. After that, $0.005/call (USDC on Base).
 
-| Use MemoClaw | Use Local Files |
-|--------------|-----------------|
-| Cross-session recall | Secrets, API keys |
-| Semantic search | Temporary scratch notes |
-| User preferences | Large configs/code |
-| Project context | Data that must stay local |
+## What agents get
 
-## Pricing
+| Feature | Details |
+|---------|---------|
+| Semantic recall | "What editor does the user prefer?" → finds "User likes Neovim with vim bindings" |
+| Free-tier first | `core` + `search` are free; `recall` + `context` only when needed |
+| Auto-dedup | `consolidate` merges similar memories |
+| Namespaces | Isolate memories per project |
+| Relations | Link memories: supersedes, contradicts, supports |
+| Import/export | Migrate from MEMORY.md files, export as JSON/CSV/markdown |
 
-**Free Tier:** 100 calls per wallet — no payment required.
+## Key commands
 
-After free tier (USDC on Base):
-- Store/Recall/Update: $0.005
-- Store batch (up to 100): $0.04
-- Extract/Ingest/Consolidate/Context/Migrate: $0.01
-- List, Get, Delete, Search, Suggested, Relations, Export, Stats: **Free**
+```bash
+memoclaw store "fact" --importance 0.8 --memory-type preference   # $0.005
+memoclaw recall "query" --limit 5                                  # $0.005
+memoclaw core --limit 5                                            # FREE
+memoclaw search "keyword"                                          # FREE
+memoclaw list --sort-by importance --limit 10                      # FREE
+memoclaw context "what I need" --limit 10                          # $0.01
+memoclaw consolidate --namespace default --dry-run                 # $0.01
+memoclaw stats                                                     # FREE
+```
 
-Your wallet address is your identity — no signup needed.
+## Cost
 
-## Examples
+| Usage | Daily cost | Monthly |
+|-------|-----------|---------|
+| Light (3-5 paid calls/day) | ~$0.02 | ~$0.60 |
+| Moderate (10-20/day) | ~$0.08 | ~$2.40 |
+| Heavy (30-50/day) | ~$0.20 | ~$6.00 |
 
-See [examples.md](examples.md) for detailed usage patterns: session lifecycle, ingestion, namespaces, migration, and more.
+Many commands are free: list, get, delete, search, core, stats, tags, history, export, and more.
 
-## Links
+## Resources
 
-- **API**: https://api.memoclaw.com
-- **Docs**: https://docs.memoclaw.com
-- **Website**: https://memoclaw.com
-- **Skill**: https://clawhub.ai/anajuliabit/memoclaw
+- [SKILL.md](SKILL.md) — Full agent instructions, decision trees, and CLI reference
+- [examples.md](examples.md) — 13 detailed usage scenarios with cost breakdowns
+- [api-reference.md](api-reference.md) — HTTP endpoint documentation
+- [Docs](https://docs.memoclaw.com) · [Website](https://memoclaw.com) · [ClawHub](https://clawhub.ai/anajuliabit/memoclaw)
 
 ## License
 
