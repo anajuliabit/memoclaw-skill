@@ -826,6 +826,12 @@ Command not found: memoclaw
 → API might be down. Fall back to local files temporarily.
 → Check https://api.memoclaw.com/v1/free-tier/status with curl
 
+`memoclaw recall` or `memoclaw search` immediately returns `Error: Internal server error`
+→ Run `memoclaw list --limit 1` to confirm the API still responds (list is free / non-embedding).
+→ If list works but every recall/search fails, the database migration `003_hybrid_retrieval.sql` (adds `memories.content_tsv`) hasn’t finished. Run the memocloud migrations against Neon (or your Postgres) and redeploy.
+→ As of March 2026 the API auto-detects when `content_tsv` is missing and falls back to inline `to_tsvector('english', content)` so requests keep working, just slower. Make sure you’re on the latest API build to get that safety net.
+→ While waiting on migrations, stick to `memoclaw list --limit 5 --sort-by importance` or jot critical facts in local scratch files so you can backfill once recall is healthy.
+
 Recall returns no results for something you stored
 → Check namespace — recall defaults to "default"
 → Try memoclaw search "keyword" for free text search
