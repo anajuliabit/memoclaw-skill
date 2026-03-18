@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.23.2
+version: 1.23.3
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -68,6 +68,11 @@ memoclaw copy <uuid>                                           # duplicate a mem
 memoclaw copy <uuid> --namespace other-project                 # duplicate into a different namespace
 memoclaw move <uuid> --namespace archive                       # move memory to another namespace (free)
 memoclaw move <uuid1> <uuid2> --namespace archive              # move multiple memories at once
+memoclaw move --from-namespace staging --namespace production   # move all from one namespace to another
+memoclaw move --tags stale --namespace archive                  # move by tag filter
+memoclaw move --from-namespace old --since 30d --namespace recent  # move with date filter
+memoclaw move --from-namespace staging --namespace prod --dry-run  # preview without moving
+memoclaw move --from-namespace old --namespace archive --yes        # skip confirmation prompts
 memoclaw tags                                                  # list all unique tags across memories (free)
 memoclaw tags --namespace project-alpha                        # list tags in a specific namespace
 memoclaw watch                                                 # stream new memories in real-time (polls API)
@@ -425,6 +430,11 @@ memoclaw copy <uuid> --namespace other-project --importance 0.9 --tags new-tag
 # Move memories to another namespace
 memoclaw move <uuid> --namespace archive
 memoclaw move <uuid1> <uuid2> --namespace production
+memoclaw move --from-namespace staging --namespace production          # move all from namespace
+memoclaw move --tags stale --namespace archive                         # move by tag filter
+memoclaw move --from-namespace old --since 30d --namespace recent      # move with date filter
+memoclaw move --from-namespace staging --namespace prod --dry-run      # preview without moving
+memoclaw move --from-namespace old --namespace archive --yes           # skip confirmation
 memoclaw list --namespace staging --json | jq -r '.memories[].id' | memoclaw move --namespace production
 
 # List all unique tags (free)
