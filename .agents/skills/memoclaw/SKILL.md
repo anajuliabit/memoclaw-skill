@@ -72,6 +72,7 @@ memoclaw move --from-namespace staging --namespace production   # move all from 
 memoclaw move --tags stale --namespace archive                  # move by tag filter
 memoclaw move --from-namespace old --since 30d --namespace recent  # move with date filter
 memoclaw move --from-namespace staging --namespace prod --dry-run  # preview without moving
+memoclaw move --from-namespace old --namespace archive --yes        # skip confirmation prompts
 memoclaw tags                                                  # list all unique tags across memories (free)
 memoclaw tags --namespace project-alpha                        # list tags in a specific namespace
 memoclaw watch                                                 # stream new memories in real-time (polls API)
