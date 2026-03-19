@@ -1,6 +1,6 @@
 ---
 name: memoclaw
-version: 1.23.4
+version: 1.23.5
 description: |
   Memory-as-a-Service for AI agents. Store and recall memories with semantic
   vector search. 100 free calls per wallet, then x402 micropayments.
@@ -477,8 +477,11 @@ memoclaw relations list <memory-id>
 memoclaw relations create <memory-id> <target-id> related_to
 memoclaw relations delete <memory-id> <relation-id>
 
-# Traverse the memory graph
+# Traverse the memory graph (related memories up to N hops)
 memoclaw graph <memory-id>
+memoclaw graph <memory-id> --depth 3                   # max hops (default: 2, max: 5)
+memoclaw graph <memory-id> --limit 100                 # max memories returned (default: 50, max: 200)
+memoclaw graph <memory-id> --depth 2 --relation-types supersedes,contradicts  # filter by relation type
 
 # Assemble context block for LLM prompts
 memoclaw context "user preferences and recent decisions" --limit 10
@@ -516,8 +519,9 @@ memoclaw diff <uuid> --all             # all diffs in sequence
 memoclaw count
 memoclaw count --namespace project-alpha
 
-# Interactive memory browser (REPL)
+# Interactive memory browser (REPL) — search, view, update, delete, relate memories interactively
 memoclaw browse
+memoclaw browse --namespace project-alpha              # start in a specific namespace
 
 # Import memories from JSON export
 memoclaw import memories.json
@@ -880,7 +884,13 @@ CLI --help shows wrong memory types (e.g. "core, episodic, semantic")
 
 ### Quick health check
 
-Run this sequence to verify everything works:
+Run the automated preflight script to verify everything at once:
+
+```bash
+bash scripts/preflight.sh   # checks CLI, config, API, free tier, memory count
+```
+
+Or check manually:
 
 ```bash
 memoclaw config check    # Wallet configured?
