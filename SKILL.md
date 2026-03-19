@@ -21,7 +21,7 @@ Persistent memory for AI agents. Store text, recall it later with semantic searc
 
 No API keys. No registration. Your wallet address is your identity.
 
-Every wallet gets 100 free API calls — just sign and go. After that, x402 micropayments ($0.005/call, USDC on Base).
+Every wallet gets 100 free API calls — just sign and go. After that, embedding-backed calls split into two x402 tiers: store/update/recall/batch update stay at $0.005, while context/extract/ingest/consolidate/migrate cost $0.01 (all paid in USDC on Base).
 
 ---
 
