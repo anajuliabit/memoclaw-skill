@@ -832,6 +832,12 @@ Command not found: memoclaw
 → As of March 2026 the API auto-detects when `content_tsv` is missing and falls back to inline `to_tsvector('english', content)` so requests keep working, just slower. Make sure you’re on the latest API build to get that safety net.
 → While waiting on migrations, stick to `memoclaw list --limit 5 --sort-by importance` or jot critical facts in local scratch files so you can backfill once recall is healthy.
 
+`memoclaw search "query"` returns `Error: Invalid memory ID format`
+→ CLI ≤1.9.0 still points `memoclaw search` at `GET /v1/memories/search`, which the API interprets as `/v1/memories/:id` and rejects because "search" isn’t a UUID.
+→ Run `memoclaw --version`. If it’s 1.9.0 or older, upgrade: `npm install -g anajuliabit/memoclaw-cli#fix/search-endpoint` (temporary) or, once published, `npm install -g memoclaw@latest` (≥1.9.1 uses `POST /v1/search`).
+→ Need results immediately? Call the API directly: `curl -s https://api.memoclaw.com/v1/search -H "content-type: application/json" -d '{"query":"meeting notes","limit":5}' | jq`. This endpoint is FREE because it skips embeddings.
+→ OpenClaw automations using the MemoClaw skill keep working because the skill already targets `POST /v1/search`. If your agent has to run locally, swap the failing CLI step for the skill’s `search` tool until you can upgrade the CLI.
+
 Recall returns no results for something you stored
 → Check namespace — recall defaults to "default"
 → Try memoclaw search "keyword" for free text search
