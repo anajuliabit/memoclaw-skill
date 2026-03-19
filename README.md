@@ -20,7 +20,7 @@ memoclaw recall "UI preferences"  # semantic search
 3. **Decay** naturally — memory types control half-lives (corrections: 180d, observations: 14d)
 4. **Pin** critical facts so they never decay
 
-Every wallet gets **100 free API calls**. After that, $0.005/call (USDC on Base).
+Every wallet gets **100 free API calls**. After that, only embedding-backed commands incur x402 micropayments: store/update/recall/batch update stay at **$0.005** each, while higher-touch workflows (context, ingest, extract, migrate) cost **$0.01**. List/get/delete/search/core/stats/tags commands remain free.
 
 ## What agents get
 
