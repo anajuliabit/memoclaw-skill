@@ -56,6 +56,19 @@ memoclaw stats                                                     # FREE
 
 Many commands are free: list, get, delete, search, core, stats, tags, history, export, and more. Only embedding-backed calls (store/update/recall/context/extract/ingest/consolidate/migrate) incur the paid per-call pricing.
 
+### Cost tiers after the free 100 calls
+
+| Tier | Price | Commands and notes |
+|------|-------|--------------------|
+| Free | $0 | list, get, delete, bulk delete, search (text), core, suggested, relations, history, export, namespace list/stats, count, browse, config, tags, watch, alias, snapshot, pin/unpin, lock/unlock, edit, copy, move, whoami, status, upgrade (see note<sup>3</sup>) |
+| Embedding | $0.005 per call<sup>1</sup> | store, store --file, store --batch<sup>2</sup>, update (when content changes), recall, batch update |
+| Workflow | $0.01 per call | context, extract, ingest, consolidate, migrate |
+
+1. Update only bills when you change the stored content (metadata-only edits stay free). Recall and store charges include the embedding regeneration.
+2. Batch store costs $0.04 per request for up to 100 memories and draws from the same $0.005 embedding tier.
+3. See SKILL.md for the exhaustive list of free commands if you need something beyond the highlights above.
+
+
 ## Resources
 
 - [SKILL.md](SKILL.md) — Full agent instructions, decision trees, and CLI reference

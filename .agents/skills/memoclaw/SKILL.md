@@ -139,7 +139,7 @@ Need to retrieve memories?
 | `recall` | $0.005 | Semantic vector search (embeddings) | "What did user say about X?" style queries |
 | `context` | $0.01 | GPT assembles an LLM-ready block from relevant memories | Feeding context into a system prompt |
 
-**Cost-saving tip:** Start with `core` + `search` (both free). Only use `recall`/`context` when you need semantic understanding or formatted output.
+**Cost-saving tip:** Start with `core` + `search` (both free). Only use `recall`/`context` when you need semantic understanding or formatted output. See the cost tiers cheat sheet below for the full list of paid commands.
 
 ### When MemoClaw beats local files
 
@@ -644,6 +644,18 @@ The CLI handles both automatically.
 | Ingest | $0.01 |
 | Context | $0.01 |
 | Migrate (per request) | $0.01 |
+
+### Cost tiers cheat sheet
+
+| Tier | Price | Commands and notes |
+|------|-------|--------------------|
+| Free | $0 | list, get, delete, bulk delete, search (text), core, suggested, relations, history, export, namespace list/stats, count, browse, config, tags, watch, alias, snapshot, pin/unpin, lock/unlock, edit, copy, move, whoami, status, upgrade (see note<sup>3</sup>) |
+| Embedding | $0.005 per call<sup>1</sup> | store, store --file, store --batch<sup>2</sup>, update (when content changes), recall, batch update |
+| Workflow | $0.01 per call | context, extract, ingest, consolidate, migrate |
+
+1. Update only bills when you change the stored content (metadata-only edits stay free). Recall and store charges include the embedding regeneration.
+2. Batch store costs $0.04 per request for up to 100 memories and draws from the same $0.005 embedding tier.
+3. The free row highlights the most-used commands; see the "Free commands" section near the top of this file for the full list.
 
 **Free:** List, Get, Delete, Bulk Delete, Search (text), Core, Suggested, Relations, History, Export, Import, Namespace, Stats, Count
 
