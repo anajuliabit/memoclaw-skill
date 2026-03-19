@@ -20,7 +20,7 @@ memoclaw recall "UI preferences"  # semantic search
 3. **Decay** naturally — memory types control half-lives (corrections: 180d, observations: 14d)
 4. **Pin** critical facts so they never decay
 
-Every wallet gets **100 free API calls**. After that, $0.005/call (USDC on Base).
+Every wallet gets **100 free API calls**. After that, embedding-backed commands pay per call: store/update/recall/batch update stay at $0.005 while context/extract/ingest/consolidate/migrate cost $0.01. List/get/search/core/etc remain free. (USDC on Base)
 
 ## What agents get
 
@@ -54,7 +54,7 @@ memoclaw stats                                                     # FREE
 | Moderate (10-20/day) | ~$0.08 | ~$2.40 |
 | Heavy (30-50/day) | ~$0.20 | ~$6.00 |
 
-Many commands are free: list, get, delete, search, core, stats, tags, history, export, and more.
+Many commands are free: list, get, delete, search, core, stats, tags, history, export, and more. Only embedding-backed calls (store/update/recall/context/extract/ingest/consolidate/migrate) incur the paid per-call pricing.
 
 ## Resources
 
