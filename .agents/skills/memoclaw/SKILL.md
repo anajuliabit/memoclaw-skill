@@ -343,7 +343,7 @@ Things that waste calls or degrade recall quality:
 
 ### Example flow
 
-> See [examples.md](examples.md) for 10 detailed scenarios including session lifecycle, migration, multi-agent patterns, and cost breakdown.
+> See [examples.md](examples.md) for 13 detailed scenarios including session lifecycle, migration, multi-agent patterns, and cost breakdown.
 
 ```
 User: "Remember, I prefer tabs over spaces"
